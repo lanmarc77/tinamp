@@ -1,0 +1,153 @@
+#!/bin/bash
+cd .build
+
+cd FFmpeg
+
+make clean
+
+./configure \
+  --prefix=/usr \
+  --enable-shared \
+  --disable-libopencore-amrwb \
+  --enable-version3 \
+  --disable-static \
+  --disable-amf \
+  --disable-audiotoolbox \
+  --disable-cuda-nvcc \
+  --disable-cuda-llvm \
+  --disable-cuvid \
+  --disable-d3d11va \
+  --disable-dxva2 \
+  --disable-ffnvcodec \
+  --disable-libdrm \
+  --disable-libmfx \
+  --disable-libnpp \
+  --disable-mmal \
+  --disable-nvdec \
+  --disable-nvenc \
+  --disable-omx \
+  --disable-omx-rpi \
+  --disable-rkmpp \
+  --disable-v4l2-m2m \
+  --disable-vaapi \
+  --disable-vdpau \
+  --disable-videotoolbox \
+  --disable-vulkan \
+  --disable-alsa \
+  --disable-appkit \
+  --disable-avfoundation \
+  --disable-avisynth \
+  --disable-bzlib \
+  --disable-coreimage \
+  --disable-chromaprint \
+  --disable-frei0r \
+  --disable-gcrypt \
+  --disable-gmp \
+  --disable-gnutls \
+  --disable-iconv \
+  --disable-jni \
+  --disable-ladspa \
+  --disable-libaom \
+  --disable-libaribb24 \
+  --disable-libass \
+  --disable-libbluray \
+  --disable-libbs2b \
+  --disable-libcaca \
+  --disable-libcelt \
+  --disable-libcdio \
+  --disable-libcodec2 \
+  --disable-libdav1d \
+  --disable-libdavs2 \
+  --disable-libdc1394 \
+  --disable-libfdk-aac \
+  --disable-libflite \
+  --disable-libfontconfig \
+  --disable-libfreetype \
+  --disable-libfribidi \
+  --disable-libglslang \
+  --disable-libgme \
+  --disable-libgsm \
+  --disable-libiec61883 \
+  --disable-libilbc \
+  --disable-libjack \
+  --disable-libklvanc \
+  --disable-libkvazaar \
+  --disable-liblensfun \
+  --disable-libmodplug \
+  --disable-libmp3lame \
+  --disable-libopencore-amrnb \
+  --disable-libopencv \
+  --disable-libopenh264 \
+  --disable-libopenjpeg \
+  --disable-libopenmpt \
+  --disable-libopenvino \
+  --disable-libopus \
+  --disable-libpulse \
+  --disable-librabbitmq \
+  --disable-librav1e \
+  --disable-librist \
+  --disable-librsvg \
+  --disable-librubberband \
+  --disable-librtmp \
+  --disable-libshine \
+  --disable-libsmbclient \
+  --disable-libsnappy \
+  --disable-libsoxr \
+  --disable-libspeex \
+  --disable-libsrt \
+  --disable-libssh \
+  --disable-libsvtav1 \
+  --disable-libtensorflow \
+  --disable-libtesseract \
+  --disable-libtheora \
+  --disable-libtls \
+  --disable-libtwolame \
+  --disable-libuavs3d \
+  --disable-libv4l2 \
+  --disable-libvidstab \
+  --disable-libvmaf \
+  --disable-libvo-amrwbenc \
+  --disable-libvorbis \
+  --disable-libvpx \
+  --disable-libwebp \
+  --disable-libx264 \
+  --disable-libx265 \
+  --disable-libxavs \
+  --disable-libxavs2 \
+  --disable-libxcb \
+  --disable-libxcb-shm \
+  --disable-libxcb-xfixes \
+  --disable-libxcb-shape \
+  --disable-libxvid \
+  --disable-libxml2 \
+  --disable-libzimg \
+  --disable-libzmq \
+  --disable-libzvbi \
+  --disable-lv2 \
+  --disable-lzma \
+  --disable-decklink \
+  --disable-mbedtls \
+  --disable-mediacodec \
+  --disable-mediafoundation \
+  --disable-libmysofa \
+  --disable-openal \
+  --disable-opencl \
+  --disable-opengl \
+  --disable-openssl \
+  --disable-pocketsphinx \
+  --disable-sndio \
+  --disable-schannel \
+  --disable-sdl2 \
+  --disable-securetransport \
+  --disable-vapoursynth \
+  --disable-xlib \
+  --disable-zlib
+ret=$?
+if [ "$ret" != "0" ]; then
+    echo "configure did not work"
+    exit 2
+fi
+
+make -j10
+cd ..
+chown -R 1000:1000 FFmpeg

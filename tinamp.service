@@ -1,0 +1,10 @@
+[Unit]
+Description=start TINAMP
+
+[Service]
+ExecStart=/storage/games-internal/tinampService.sh
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=rocknix.target
