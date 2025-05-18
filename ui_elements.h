@@ -15,6 +15,7 @@
 #define UI_ELEMENTS_H
 #include <stdint.h>
 #include <stdbool.h>
+#include "globals.h"
 /*
     This component takes care of drawing symbols and text and numbers to
     the physical display.
@@ -23,9 +24,6 @@
     actually redraw the screen.
 
 */
-#define FW_MAJOR 00
-#define FW_MINOR 00
-#define FW_PATCH 02
 
 void UI_ELEMENTS_init();
 void UI_ELEMENTS_textScrolly(uint8_t x,uint8_t y, uint8_t length, char *string);

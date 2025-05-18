@@ -1,18 +1,10 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#define TINAMP_KEY_NONE 0
-#define TINAMP_KEY_UP 1
-#define TINAMP_KEY_DOWN 2
-#define TINAMP_KEY_LEFT 3
-#define TINAMP_KEY_RIGHT 4
-#define TINAMP_KEY_START 5
-#define TINAMP_KEY_SELECT 6
-#define TINAMP_KEY_OTHER 99
+#define FW_MAJOR 00
+#define FW_MINOR 00
+#define FW_PATCH 03
 
-#define TINAMP_KEY_QUIT 100
-#define TINAMP_KEY_QUIT_SHUTDOWN 101
-#define TINAMP_WINDOW_RESIZE 102
+//#define FFMPEG_AMR_PATCH 
 
-
-#endf
+#endif

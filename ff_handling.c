@@ -188,7 +188,7 @@ uint8_t FF_getList(char* folderPath,uint16_t* amountOfEntries,uint16_t* sortedId
         queue_push(outQueue,&outQueueMsg);
         return 2;
     }
-    SDL_LogMessage(SDL_LOG_CATEGORY_INPUT,SDL_LOG_PRIORITY_INFO,"Scan finished ok. Found %i folders.\n",*amountOfEntries);
+    SDL_LogMessage(SDL_LOG_CATEGORY_INPUT,SDL_LOG_PRIORITY_INFO,"Scan finished ok. Found %i items.\n",*amountOfEntries);
     outQueueMsg.ff_message.message=-1;
     queue_push(outQueue,&outQueueMsg);
     return 1;

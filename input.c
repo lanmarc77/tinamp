@@ -26,100 +26,191 @@ void INPUT_switchAB(uint8_t abSwitch){
 }
 
 int INPUT_SDL_EventLoop(void *user_data) {
-    uint64_t keyTimeout=0;
+    uint64_t keyTimeouts[INPUT_KEY_LONG_ADDITION]={0};
+    uint64_t keyState=0;
     SDL_Event e;
     uint8_t quit=0;
 
     QueueData data;
     while(!quit){
-        if(keyTimeout!=0){
-            if(UTIL_get_time_us()-keyTimeout>3000000){
-                data.type=QUEUE_DATA_INPUT;
-                data.input_message.key=INPUT_KEY_SELECT_LONG;
-                keyTimeout=0;
-                queue_push(INPUT_outQueue,&data);
+        data.input_message.key=INPUT_KEY_NONE;
+        for(int i=0;i<INPUT_KEY_LONG_ADDITION;i++){
+            if((keyTimeouts[i]!=0)&&(keyTimeouts[i]!=1)){
+                if((UTIL_get_time_us()-keyTimeouts[i])>3000000){
+                    keyTimeouts[i]=1;
+                    data.input_message.key=i+INPUT_KEY_LONG_ADDITION;
+                }
             }
         }
         if( SDL_WaitEventTimeout( &e ,1000) != 0 ) {
-            data.input_message.key=INPUT_KEY_NONE;
             switch (e.type) {
                 case SDL_QUIT:
-                    data.input_message.key=INPUT_KEY_SELECT;
+                    data.input_message.key=INPUT_KEY_SELECT_AND_START;
                     quit=1;
                     break;
                 case SDL_CONTROLLERBUTTONUP:
-                    if(e.cbutton.button==SDL_CONTROLLER_BUTTON_BACK){//select long press
-                        if(keyTimeout!=0){
-                            keyTimeout=0;
-                            data.input_message.key=INPUT_KEY_SELECT;
+                    if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_UP){//dpad up
+                        keyState&=~(1<<INPUT_KEY_UP_STRONG);
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_DOWN){//dpad down
+                        keyState&=~(1<<INPUT_KEY_DOWN_STRONG);
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_RIGHT){//dpad right
+                        keyState&=~(1<<INPUT_KEY_UP);
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_LEFT){//dpad left
+                        keyState&=~(1<<INPUT_KEY_DOWN);
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_START){//start
+                        keyState&=~(1<<INPUT_KEY_START);
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_BACK){//select
+                        keyState&=~(1<<INPUT_KEY_SELECT);
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_A){//A
+                        if(INPUT_abSwitch==0){
+                            if(keyTimeouts[INPUT_KEY_BACK]>10){
+                                data.input_message.key=INPUT_KEY_BACK;
+                                keyTimeouts[INPUT_KEY_BACK]=0;
+                            }
+                            keyState&=~(1<<INPUT_KEY_BACK);
+                        }else{
+                            keyState&=~(1<<INPUT_KEY_OK);
+                        }
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_B){//B
+                        if(INPUT_abSwitch==0){
+                            if(keyTimeouts[INPUT_KEY_BACK]>10){
+                                data.input_message.key=INPUT_KEY_BACK;
+                                keyTimeouts[INPUT_KEY_BACK]=0;
+                            }
+                            keyState&=~(1<<INPUT_KEY_BACK);
+                        }else{
+                            keyState&=~(1<<INPUT_KEY_OK);
                         }
                     }
                     break;
                 case SDL_CONTROLLERBUTTONDOWN:
                     if(e.cbutton.state!=SDL_PRESSED) break;//no repeats for buttons
-                    if(keyTimeout!=0) break;
                     if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_UP){//dpad up
-                        data.input_message.key=INPUT_KEY_UP;
-                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_DOWN){//dpad down
-                        data.input_message.key=INPUT_KEY_DOWN;
-                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_RIGHT){//dpad right
                         data.input_message.key=INPUT_KEY_UP_STRONG;
-                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_LEFT){//dpad left
+                        keyState|=1<<INPUT_KEY_UP_STRONG;
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_DOWN){//dpad down
                         data.input_message.key=INPUT_KEY_DOWN_STRONG;
+                        keyState|=1<<INPUT_KEY_DOWN_STRONG;
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_RIGHT){//dpad right
+                        data.input_message.key=INPUT_KEY_UP;
+                        keyState|=1<<INPUT_KEY_UP;
+                    }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_DPAD_LEFT){//dpad left
+                        data.input_message.key=INPUT_KEY_DOWN;
+                        keyState|=1<<INPUT_KEY_DOWN;
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_START){//start
-                        data.input_message.key=INPUT_KEY_START;
+                        if(keyState&(1<<INPUT_KEY_SELECT)){
+                            data.input_message.key=INPUT_KEY_SELECT_AND_START;
+                        }else{
+                            data.input_message.key=INPUT_KEY_START;
+                        }
+                        keyState|=1<<INPUT_KEY_START;
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_BACK){//select
-                        keyTimeout=UTIL_get_time_us();
+                        if(keyState&(1<<INPUT_KEY_START)){
+                            data.input_message.key=INPUT_KEY_SELECT_AND_START;
+                        }else{
+                            data.input_message.key=INPUT_KEY_SELECT;
+                        }
+                        keyState|=1<<INPUT_KEY_SELECT;
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_A){//A
                         if(INPUT_abSwitch==0){
                             data.input_message.key=INPUT_KEY_OK;
+                            keyState|=1<<INPUT_KEY_OK;
                         }else{
-                            data.input_message.key=INPUT_KEY_BACK;
+                            keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                            keyState|=1<<INPUT_KEY_BACK;
                         }
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_B){//B
                         if(INPUT_abSwitch==0){
-                            data.input_message.key=INPUT_KEY_BACK;
+                            keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                            keyState|=1<<INPUT_KEY_BACK;
                         }else{
                             data.input_message.key=INPUT_KEY_OK;
+                            keyState|=1<<INPUT_KEY_OK;
                         }
                     }else{
                         data.input_message.key=INPUT_KEY_OTHER;
                     }
                     break;
                 case SDL_KEYUP:
-                    if(e.key.keysym.scancode==44){//space=select
-                        if(keyTimeout!=0){
-                            keyTimeout=0;
-                            data.input_message.key=INPUT_KEY_SELECT;
+                    if(e.key.repeat==0){//make keyboard behave like controller without repeat for local development
+                        if(e.key.keysym.scancode==82){//up
+                            keyState&=~(1<<INPUT_KEY_UP_STRONG);
+                        }else if(e.key.keysym.scancode==81){//down
+                            keyState&=~(1<<INPUT_KEY_DOWN_STRONG);
+                        }else if(e.key.keysym.scancode==79){//right
+                            keyState&=~(1<<INPUT_KEY_UP);
+                        }else if(e.key.keysym.scancode==80){//left
+                            keyState&=~(1<<INPUT_KEY_DOWN);
+                        }else if(e.key.keysym.scancode==40){//enter=start
+                            keyState&=~(1<<INPUT_KEY_START);
+                        }else if(e.key.keysym.scancode==44){//space=select
+                            keyState&=~(1<<INPUT_KEY_SELECT);
+                        }else if(e.key.keysym.scancode==4){//a=ok
+                            if(INPUT_abSwitch==0){
+                                if(keyTimeouts[INPUT_KEY_BACK]>10){
+                                    data.input_message.key=INPUT_KEY_BACK;
+                                    keyTimeouts[INPUT_KEY_BACK]=0;
+                                }
+                                keyState&=~(1<<INPUT_KEY_BACK);
+                            }else{
+                                keyState&=~(1<<INPUT_KEY_OK);
+                            }
+                        }else if(e.key.keysym.scancode==5){//b=back
+                            if(INPUT_abSwitch==0){
+                                if(keyTimeouts[INPUT_KEY_BACK]>10){
+                                    data.input_message.key=INPUT_KEY_BACK;
+                                    keyTimeouts[INPUT_KEY_BACK]=0;
+                                }
+                                keyState&=~(1<<INPUT_KEY_BACK);
+                            }else{
+                                keyState&=~(1<<INPUT_KEY_OK);
+                            }
                         }
                     }
                     break;
                 case SDL_KEYDOWN:
-                    if(keyTimeout!=0) break;
                     if(e.key.repeat==0){//make keyboard behave like controller without repeat for local development
                         if(e.key.keysym.scancode==82){//up
-                            data.input_message.key=INPUT_KEY_UP;
-                        }else if(e.key.keysym.scancode==81){//down
-                            data.input_message.key=INPUT_KEY_DOWN;
-                        }else if(e.key.keysym.scancode==79){//right
                             data.input_message.key=INPUT_KEY_UP_STRONG;
-                        }else if(e.key.keysym.scancode==80){//left
+                            keyState|=1<<INPUT_KEY_UP_STRONG;
+                        }else if(e.key.keysym.scancode==81){//down
                             data.input_message.key=INPUT_KEY_DOWN_STRONG;
+                            keyState|=1<<INPUT_KEY_DOWN_STRONG;
+                        }else if(e.key.keysym.scancode==79){//right
+                            data.input_message.key=INPUT_KEY_UP;
+                            keyState|=1<<INPUT_KEY_UP;
+                        }else if(e.key.keysym.scancode==80){//left
+                            data.input_message.key=INPUT_KEY_DOWN;
+                            keyState|=1<<INPUT_KEY_DOWN;
                         }else if(e.key.keysym.scancode==40){//enter=start
-                            data.input_message.key=INPUT_KEY_START;
+                            if(keyState&(1<<INPUT_KEY_SELECT)){
+                                data.input_message.key=INPUT_KEY_SELECT_AND_START;
+                            }else{
+                                data.input_message.key=INPUT_KEY_START;
+                            }
+                            keyState|=1<<INPUT_KEY_START;
                         }else if(e.key.keysym.scancode==44){//space=select
-                            keyTimeout=UTIL_get_time_us();
+                            if(keyState&(1<<INPUT_KEY_START)){
+                                data.input_message.key=INPUT_KEY_SELECT_AND_START;
+                            }else{
+                                data.input_message.key=INPUT_KEY_SELECT;
+                            }
+                            keyState|=1<<INPUT_KEY_SELECT;
                         }else if(e.key.keysym.scancode==4){//a=ok
                             if(INPUT_abSwitch==0){
                                 data.input_message.key=INPUT_KEY_OK;
+                                keyState|=1<<INPUT_KEY_OK;
                             }else{
-                                data.input_message.key=INPUT_KEY_BACK;    
+                                keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                                keyState|=1<<INPUT_KEY_BACK;
                             }
                         }else if(e.key.keysym.scancode==5){//b=back
                             if(INPUT_abSwitch==0){
-                                data.input_message.key=INPUT_KEY_BACK;
+                                keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                                keyState|=1<<INPUT_KEY_BACK;
                             }else{
                                 data.input_message.key=INPUT_KEY_OK;
+                                keyState|=1<<INPUT_KEY_OK;
                             }
                         }else{
                             data.input_message.key=INPUT_KEY_OTHER;
@@ -145,10 +236,10 @@ int INPUT_SDL_EventLoop(void *user_data) {
                     }
                     return false;*/
             }
-            if(data.input_message.key!=INPUT_KEY_NONE){
-                data.type=QUEUE_DATA_INPUT;
-                queue_push(INPUT_outQueue,&data);
-            }
+        }
+        if(data.input_message.key!=INPUT_KEY_NONE){
+            data.type=QUEUE_DATA_INPUT;
+            queue_push(INPUT_outQueue,&data);
         }
     }
     return 0;
