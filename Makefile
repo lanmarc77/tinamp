@@ -28,10 +28,10 @@ libvlc_aarch64_compile:
 	./compileLibvlcAarch64.sh
 
 libffmpeg_aarch64_compile:
-	- GIT_SSL_NO_VERIFY=true git clone -b release/7.1 https://github.com/FFmpeg/FFmpeg $(BUILD_DIR)/FFmpeg
-#	- GIT_SSL_NO_VERIFY=true git clone -b release/6.1 https://github.com/FFmpeg/FFmpeg
-#	- GIT_SSL_NO_VERIFY=true git clone -b release/6.0 https://github.com/FFmpeg/FFmpeg
-#	- GIT_SSL_NO_VERIFY=true git clone -b release/4.4 https://github.com/FFmpeg/FFmpeg
+#	- GIT_SSL_NO_VERIFY=true git clone -b release/7.1 https://github.com/FFmpeg/FFmpeg $(BUILD_DIR)/FFmpeg
+#	- GIT_SSL_NO_VERIFY=true git clone -b release/6.1 https://github.com/FFmpeg/FFmpeg $(BUILD_DIR)/FFmpeg
+#	- GIT_SSL_NO_VERIFY=true git clone -b release/6.0 https://github.com/FFmpeg/FFmpeg $(BUILD_DIR)/FFmpeg
+	- GIT_SSL_NO_VERIFY=true git clone -b release/4.4 https://github.com/FFmpeg/FFmpeg $(BUILD_DIR)/FFmpeg
 	./compileFFmpegAarch64.sh
 
 libvlc_aarch64: $(BUILD_DIR)

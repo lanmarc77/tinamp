@@ -19,6 +19,7 @@
 #include <vlc/vlc.h>
 #include "sd_play.h"
 #include "format_helper.h"
+#include "globals.h"
 
 Queue SD_PLAY_inQueue;
 Queue* SD_PLAY_outQueue=NULL;
@@ -139,10 +140,12 @@ int SD_PLAY_messageLoopThread(void *user_data){
                 if(data.sd_play_message.msgType==SD_PLAY_MSG_TYPE_START_PLAY){
                     amrFix=0;
                     data.sd_play_message.msgType=SD_PLAY_MSG_TYPE_START_PLAY;
+#ifdef FFMPEG_AMR_PATCH
                     if(FORMAT_HELPER_getFileType(data.sd_play_message.msgData)==FORMAT_HELPER_FILE_TYPE_AMR){
                         SDL_LogMessage(SDL_LOG_CATEGORY_AUDIO,SDL_LOG_PRIORITY_INFO,"AMR detected. Bugfix for https://trac.ffmpeg.org/ticket/11576.\n");
                         amrFix=1;
                     }
+#endif
                     queue_push(SD_PLAY_outQueue,&data);
                     SD_PLAY_startPlaying(data.sd_play_message.msgData,data.sd_play_message.startPosition);
                     lastMillisecond=-1;
@@ -269,11 +272,13 @@ int64_t SD_PLAY_getRuntime(char *file){
                 SDL_Delay(10);
             }
             r=libvlc_media_get_duration(m);
+#ifdef FFMPEG_AMR_PATCH
             if(FORMAT_HELPER_getFileType(file)==FORMAT_HELPER_FILE_TYPE_AMR){
                 SDL_LogMessage(SDL_LOG_CATEGORY_AUDIO,SDL_LOG_PRIORITY_INFO,"AMR detected. Bugfix for https://trac.ffmpeg.org/ticket/11576. Original runtime %li.\n",r);
                 r=(r*100000000)/103333333;
                 SDL_LogMessage(SDL_LOG_CATEGORY_AUDIO,SDL_LOG_PRIORITY_INFO,"AMR detected. Bugfix for https://trac.ffmpeg.org/ticket/11576. Adjusted runtime %li.\n",r);
             }
+#endif
             libvlc_media_release(m);
             return r;
         }

@@ -18,11 +18,12 @@
 #include <stdio.h>
 #include "md5.h"
 #include "saves.h"
+#include <sys/statvfs.h>
 
 char SAVES_baseFolder[FF_FILE_PATH_MAX]={0};
 char SAVES_settingsFileName[]="settings.cfg";
 /**
-  * @brief  mounts the vfs spiffs partition and formats it if needed
+  * @brief  inits all needed local variables for save file handling
   */
 void SAVES_init(char *baseFolder){
     strcpy(&SAVES_baseFolder[0],baseFolder);
@@ -49,8 +50,6 @@ uint8_t SAVES_loadSettings(SAVES_settings_t *settings){
     {
         fclose(f);
         return 0;
-    }else{
-//        ESP_LOGE(SAVES_LOG_TAG,"Settings restore error. Result %li",result);
     }
     fclose(f);
     return 1;
@@ -71,7 +70,6 @@ uint8_t SAVES_saveSettings(SAVES_settings_t *settings){
     FILE* f = fopen(&tempSettingsFileName[0], "wb");
     settings->version=0;
     if (f == NULL) {
-//        ESP_LOGE(SAVES_LOG_TAG,"Could not open settings.cfg for writing.");
         return 1;
     }
     int32_t result=fwrite(settings,1,sizeof(SAVES_settings_t),f);
@@ -79,8 +77,6 @@ uint8_t SAVES_saveSettings(SAVES_settings_t *settings){
         fclose(f);
         rename(&tempSettingsFileName[0],&newSettingsFileName[0]);
         return 0;
-    }else{
-//        ESP_LOGE(SAVES_LOG_TAG,"Settings save error. Result %li",result);
     }
     fclose(f);
     return 1;
@@ -117,7 +113,6 @@ uint8_t SAVES_existsBookmark(char* folderName,SAVES_saveState_t* save){
     SAVES_getBookmarkFileFromFolderName(folderName,&fileNameOnly[0]);
     sprintf(&saveFileName[0],"%s%s",&SAVES_baseFolder[0],&fileNameOnly[0]);
 
-    //ESP_LOGI(SAVES_LOG_TAG,"Searching for bookmark file %s",&saveFileName[0]);
     FILE* f = fopen(&saveFileName[0], "rb");
     if (f == NULL) {
         return 1;
@@ -126,11 +121,8 @@ uint8_t SAVES_existsBookmark(char* folderName,SAVES_saveState_t* save){
     if ((result<sizeof(SAVES_saveState_t)&&(feof(f)))
         ||(result==sizeof(SAVES_saveState_t))
     ){
-//        ESP_LOGI(SAVES_LOG_TAG,"Restored ok. folder \"%s\" file \"%s\" ",save->folderName,save->fileName);
         fclose(f);
         return 0;
-    }else{
-//        ESP_LOGE(SAVES_LOG_TAG,"Restore error. Result %li",result);
     }
     fclose(f);
     return 1;
@@ -152,22 +144,17 @@ uint8_t SAVES_saveBookmark(char* folderName,SAVES_saveState_t* save){
     sprintf(&tempSaveFileName[0],"%stmp_%s",&SAVES_baseFolder[0],&saveFileName[0]);
     sprintf(&newSaveFileName[0],"%s%s",&SAVES_baseFolder[0],&saveFileName[0]);
 
-    //ESP_LOGI(SAVES_LOG_TAG,"Saving for bookmark file %s at position %llu for playfile %s",&saveFileName[0],save->playPosition,save->fileName);
     FILE* f = fopen(&tempSaveFileName[0], "wb");
     save->version=0;
     if (f == NULL) {
-//        ESP_LOGE(SAVES_LOG_TAG,"Could not open bookmark for writing.");
         return 1;
     }
     strcpy(&save->folderName[0],folderName);
     int32_t result=fwrite(save,1,sizeof(SAVES_saveState_t),f);
     if(result==sizeof(SAVES_saveState_t)){
-//        ESP_LOGI(SAVES_LOG_TAG,"Saved ok. Free space: %li",SAVES_getUsedSpaceLevel());
         fclose(f);
         rename(&tempSaveFileName[0],&newSaveFileName[0]);
         return 0;
-    }else{
-//        ESP_LOGE(SAVES_LOG_TAG,"Save error. Result %li",result);
     }
     fclose(f);
     return 1;
@@ -197,19 +184,14 @@ int32_t SAVES_cleanOldBookmarks(uint8_t flags,char *audioBookFolder){
                         fileCounter++;
                     }else{
                         strcpy(&fullfile[0],&SAVES_baseFolder[0]);
-                        //strcat(&fullfile[0],"/");
                         strcat(&fullfile[0],currentEntry->d_name);
                         if(flags==15){
                             if(remove(&fullfile[0])==0){
                                 fileCounter++;
-//                                ESP_LOGI(SAVES_LOG_TAG,"Force deleted save: %s",&fullfile[0]);
-                            }else{
-//                                ESP_LOGE(SAVES_LOG_TAG,"ERROR force deleting save: %s",&fullfile[0]);
                             }
                         }else{
                             f = fopen(&fullfile[0], "rb");
                             if (f == NULL) {
-//                                ESP_LOGE(SAVES_LOG_TAG,"Could not open save file %s from SPIFFS.",&fullfile[0]);
                                 continue;//ignore files that cant be opened
                             }
                             int32_t result=fread(&save,1,sizeof(SAVES_saveState_t),f);
@@ -223,12 +205,10 @@ int32_t SAVES_cleanOldBookmarks(uint8_t flags,char *audioBookFolder){
                                 if(f2==NULL){
                                     if(remove(&fullfile[0])==0){
                                         fileCounter++;
-//                                        ESP_LOGI(SAVES_LOG_TAG,"Deleted missing save: %s->%s",&fullfile[0],&fullfile2[0]);
-                                    }else{
-//                                        ESP_LOGE(SAVES_LOG_TAG,"ERROR deleting missing save: %s->%s",&fullfile[0],&fullfile2[0]);
                                     }
+                                }else{
+                                    fclose(f2);
                                 }
-                                fclose(f2);
                             }
                             fclose(f);
                         }
@@ -244,17 +224,17 @@ int32_t SAVES_cleanOldBookmarks(uint8_t flags,char *audioBookFolder){
 }
 
 /**
-  * @brief get the free space of SPIFFS storage in percent
+  * @brief get the free space available in MB
   * 
-  * @return -1=error, bookmark stored, >=0, 0...100 percent
+  * @return -1=error, >=0 space in MB
   */
-int32_t SAVES_getUsedSpaceLevel(){
-    size_t total = 0, used = 0;
-//    if ((esp_spiffs_info(SAVES_spiffsConf.partition_label, &total, &used) != ESP_OK)||(used>total)) {
-//        ESP_LOGE(SAVES_LOG_TAG, "Failed to get SPIFFS partition information.");
+int64_t SAVES_getSpaceLeft(){
+    struct statvfs stat;
+
+    if (statvfs(".", &stat) != 0) {
         return -1;
-//    }
-    //ESP_LOGI(SAVES_LOG_TAG, "Used: %d, total %d",used,total);
-    return used*100/total;
+    }
+    uint64_t free_space_MB = (stat.f_bavail * stat.f_frsize)/(1024*1024);
+    return free_space_MB;
 }
 #endif

@@ -9,7 +9,8 @@ TODO
 
 # Compilation
 Docker is needed to cross compile for aarch64 architecture. 
-
+Currently Debian Bullseye is used for compilation.  
+  
 1. Build ffmpeg  
 make libffmpeg_aarch64
   

@@ -11,7 +11,7 @@ fi
 cd ..
 
 cd vlc
-#git checkout 9c47682
+git checkout 9c47682
 mkdir copy_libs
 mkdir copy_modules
 

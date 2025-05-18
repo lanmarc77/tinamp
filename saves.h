@@ -58,6 +58,6 @@ void SAVES_getBookmarkFileFromFolderName(char* folderName,char* saveFileName);
 uint8_t SAVES_existsBookmark(char* folderName,SAVES_saveState_t* save);
 uint8_t SAVES_saveBookmark(char* folderName,SAVES_saveState_t* save);
 int32_t SAVES_cleanOldBookmarks(uint8_t flags,char *audioBookFolder);
-int32_t SAVES_getUsedSpaceLevel();
+int64_t SAVES_getSpaceLeft();
 
 #endif

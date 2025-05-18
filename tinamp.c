@@ -35,25 +35,7 @@
 #include "utf8.h"
 
 
-/*TODOs:
- * code cleanup: remove all not needed ESP32 code references and unused functions
- * implement presorted.txt support with utf8 support
- * is an audio book folder allowed to have sub folders? e.g. title/volume1, title/volume2 ...?
- * allow auto save every minute to be adjusted and disabled
- * allow color setup
- * allow to disable device shutdown
- *
- * Repository machen
- *
-*/
-
 uint8_t UI_MAIN_setupMenu();
-
-#define PLAYING 0
-#define PAUSED 1
-#define PAUSED_SEEKED 2
-#define STOPPED 3
-#define UNKNOWN 255
 
 uint8_t quit = 0;
 int fontNumber=0;
@@ -184,15 +166,15 @@ int main(int argc, char* argv[])
     }
 
     strcpy(&UI_MAIN_baseFolder[0],&localPath[0]);
-    strcat(&UI_MAIN_baseFolder[0],"audiobooks");
-    if(!UI_MAIN_directoryExists(&UI_MAIN_baseFolder[0])){//audiobooks within the ports folder?
+    strcat(&UI_MAIN_baseFolder[0],"../../audiobooks");
+    if(!UI_MAIN_directoryExists(&UI_MAIN_baseFolder[0])){//audiobooks two directories above?
         strcpy(&UI_MAIN_baseFolder[0],&localPath[0]);
-        strcat(&UI_MAIN_baseFolder[0],"../../audiobooks");
-        if(!UI_MAIN_directoryExists(&UI_MAIN_baseFolder[0])){//audiobooks two directories above ?
+        strcat(&UI_MAIN_baseFolder[0],"../../ROMS/audiobooks");
+        if(!UI_MAIN_directoryExists(&UI_MAIN_baseFolder[0])){//audiobooks two directories above within ROMS folder for muos?
             strcpy(&UI_MAIN_baseFolder[0],&localPath[0]);
-            strcat(&UI_MAIN_baseFolder[0],"../../ROMS/audiobooks");
-            if(!UI_MAIN_directoryExists(&UI_MAIN_baseFolder[0])){//audiobooks two directories above within ROMS folder for muos ?
-                //TODO: what?
+            strcat(&UI_MAIN_baseFolder[0],"audiobooks");
+            if(!UI_MAIN_directoryExists(&UI_MAIN_baseFolder[0])){//audiobooks within the ports folder?
+                //if we end up here the following scan will fail resulting in the application to quit
             }
         }
     }
@@ -287,7 +269,7 @@ int main(int argc, char* argv[])
 
     while(!quit){
         now=UTIL_get_time_us();
-        if((now-UI_MAIN_offTimestamp)/1000000>120){//120s without playing or key strokes?->off
+        if((now-UI_MAIN_offTimestamp)/1000000>300){//300s without playing or key strokes?->off
             quit=2; // quitting with 2 means power down device
         }
         if((sleepTimeOffTime!=0)&&(sleepTimeOffTime<now)){
@@ -318,7 +300,9 @@ int main(int argc, char* argv[])
                     UI_MAIN_searchId=NULL;
                     UI_MAIN_searchString=NULL;
                     if(strlen(UI_MAIN_baseFolder)!=0){
-                        if(SAVES_getUsedSpaceLevel()>=75){
+                        //auto bookmark cleanup
+                        int64_t spaceLeft=SAVES_getSpaceLeft();
+                        if((spaceLeft>0)&&(spaceLeft<2)){
                             SAVES_cleanOldBookmarks(0,&UI_MAIN_baseFolder[0]);
                         }
                         UI_MAIN_settings.brightness=250;//default
@@ -347,7 +331,7 @@ int main(int argc, char* argv[])
                         }
                         ffScanThread=SDL_CreateThread(UI_MAIN_scanSortTaskAllBooks, "UI_MAIN_scanSortTaskAllBooks",NULL);
                     }else{
-                        SCREENS_noSdCard();
+                        SCREENS_noFolders();
                         SDL_Delay(2000);
                         quit=1;
                     }
@@ -439,7 +423,7 @@ int main(int argc, char* argv[])
                                 if(selectedFolder>10){
                                     selectedFolder-=10;
                                 }else{
-                                    selectedFolder=UI_MAIN_amountOfBooks;
+                                    selectedFolder=1;
                                 }
                             }else{
                                 if(selectedFolder>0){
@@ -455,7 +439,7 @@ int main(int argc, char* argv[])
                                 if(selectedFolder+10<UI_MAIN_amountOfBooks){
                                     selectedFolder+=10;
                                 }else{
-                                    selectedFolder=1;
+                                    selectedFolder=UI_MAIN_amountOfBooks;
                                 }
                             }else{
                                 if(selectedFolder<UI_MAIN_amountOfBooks){
@@ -473,9 +457,9 @@ int main(int argc, char* argv[])
                                 ffScanThread=SDL_CreateThread(UI_MAIN_scanSortTaskOneBook, "UI_MAIN_scanSortTaskOneBook",NULL);
                                 mainSM=UI_MAIN_RUN_SM_BOOK_SCAN;
                             }
-                        }else if(rxData.input_message.key==INPUT_KEY_BACK){
+                        }else if(rxData.input_message.key==INPUT_KEY_BACK_LONG){
                             quit=2; // quitting with 2 means power down device
-                        }else if(rxData.input_message.key==INPUT_KEY_SELECT_LONG){
+                        }else if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
                             quit=1;//allow manual emulation by using select here in this menu
                         }
                     }
@@ -678,6 +662,9 @@ int main(int argc, char* argv[])
                                 }
                             }
                         }
+                        if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                            quit=1;
+                        }
                     }
                     break;
             case UI_MAIN_RUN_SM_PLAY_INIT:
@@ -755,7 +742,7 @@ int main(int argc, char* argv[])
                                         }
                                     }
                                     oldSelectedFile=selectedFile;
-                                }else if(rxData.sd_play_message.msgType==SD_PLAY_MSG_TYPE_PAUSED){//user pressed pause
+                                }else if((rxData.sd_play_message.msgType==SD_PLAY_MSG_TYPE_PAUSED)){//user pressed pause
                                     mainSM=UI_MAIN_RUN_SM_PAUSED;
                                     if(reducedMode) reducedModeLastTimestamp=now;
                                     saveFlag=1;
@@ -898,12 +885,23 @@ int main(int argc, char* argv[])
                                         resumePlayOnly=1;
                                         pauseMode=1;
                                     }
-                                /*}else if(rxData.input_message.key==UI_MAIN_KEY_DOUBLE_CLICK){
-                                    if(!playOverlayActive){
-                                        UI_MAIN_sdPlayMsgSend.msgType=SD_PLAY_MSG_TYPE_STOP_PLAY;
-                                        SD_PLAY_sendMessage(&UI_MAIN_sdPlayMsgSend,100);
-                                        skipped=1;
-                                    }*/
+                                }else if(rxData.input_message.key==INPUT_KEY_SELECT){
+                                    if((!playOverlayActive)&&(!reducedMode)){//only in normal play mode and when reduced mode is off
+                                        if(sleepTimeSetupS==0) sleepTimeSetupS=60;
+                                        if(sleepTimeOffTime!=0){
+                                            sleepTimeOffTime=0;
+                                        }else{
+                                            sleepTimeOffTime=now+(uint64_t)((uint64_t)sleepTimeSetupS*(uint64_t)1000000);
+                                        }
+                                    }
+                                }else if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                                    txData.type=QUEUE_DATA_SD_PLAY;
+                                    txData.sd_play_message.msgType=SD_PLAY_MSG_TYPE_PAUSE;
+                                    SD_PLAY_sendMessage(&txData);
+                                    resumePlayOnly=1;
+                                    pauseMode=1;
+                                    saveFlag=1;
+                                    quit=1;
                                 }
                             }
                         }else{
@@ -921,7 +919,6 @@ int main(int argc, char* argv[])
                     }*/
 
                     if(saveFlag){
-                        //ESP_LOGI(UI_MAIN_LOG_TAG,"Saving playposition.");
                         memset(&UI_MAIN_saveState,0,sizeof(SAVES_saveState_t));
                         saveFlag=0;
                         if(currentPlaySecond>=5){
