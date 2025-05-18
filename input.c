@@ -20,13 +20,16 @@
 Queue *INPUT_outQueue;
 SDL_Thread *INPUT_eventLoopThread;
 uint8_t INPUT_abSwitch=0;
+uint64_t INPUT_keyTimeouts[INPUT_KEY_LONG_ADDITION]={0};
 
 void INPUT_switchAB(uint8_t abSwitch){
     INPUT_abSwitch=abSwitch;
+    for(int i=0;i<INPUT_KEY_LONG_ADDITION;i++){
+        INPUT_keyTimeouts[i]=0;
+    }
 }
 
 int INPUT_SDL_EventLoop(void *user_data) {
-    uint64_t keyTimeouts[INPUT_KEY_LONG_ADDITION]={0};
     uint64_t keyState=0;
     SDL_Event e;
     uint8_t quit=0;
@@ -35,9 +38,9 @@ int INPUT_SDL_EventLoop(void *user_data) {
     while(!quit){
         data.input_message.key=INPUT_KEY_NONE;
         for(int i=0;i<INPUT_KEY_LONG_ADDITION;i++){
-            if((keyTimeouts[i]!=0)&&(keyTimeouts[i]!=1)){
-                if((UTIL_get_time_us()-keyTimeouts[i])>3000000){
-                    keyTimeouts[i]=1;
+            if((INPUT_keyTimeouts[i]!=0)&&(INPUT_keyTimeouts[i]!=1)){
+                if((UTIL_get_time_us()-INPUT_keyTimeouts[i])>3000000){
+                    INPUT_keyTimeouts[i]=1;
                     data.input_message.key=i+INPUT_KEY_LONG_ADDITION;
                 }
             }
@@ -63,19 +66,19 @@ int INPUT_SDL_EventLoop(void *user_data) {
                         keyState&=~(1<<INPUT_KEY_SELECT);
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_A){//A
                         if(INPUT_abSwitch==0){
-                            if(keyTimeouts[INPUT_KEY_BACK]>10){
+                            keyState&=~(1<<INPUT_KEY_OK);
+                        }else{
+                            if(INPUT_keyTimeouts[INPUT_KEY_BACK]>10){
                                 data.input_message.key=INPUT_KEY_BACK;
-                                keyTimeouts[INPUT_KEY_BACK]=0;
+                                INPUT_keyTimeouts[INPUT_KEY_BACK]=0;
                             }
                             keyState&=~(1<<INPUT_KEY_BACK);
-                        }else{
-                            keyState&=~(1<<INPUT_KEY_OK);
                         }
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_B){//B
                         if(INPUT_abSwitch==0){
-                            if(keyTimeouts[INPUT_KEY_BACK]>10){
+                            if(INPUT_keyTimeouts[INPUT_KEY_BACK]>10){
                                 data.input_message.key=INPUT_KEY_BACK;
-                                keyTimeouts[INPUT_KEY_BACK]=0;
+                                INPUT_keyTimeouts[INPUT_KEY_BACK]=0;
                             }
                             keyState&=~(1<<INPUT_KEY_BACK);
                         }else{
@@ -116,12 +119,12 @@ int INPUT_SDL_EventLoop(void *user_data) {
                             data.input_message.key=INPUT_KEY_OK;
                             keyState|=1<<INPUT_KEY_OK;
                         }else{
-                            keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                            INPUT_keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
                             keyState|=1<<INPUT_KEY_BACK;
                         }
                     }else if(e.cbutton.button==SDL_CONTROLLER_BUTTON_B){//B
                         if(INPUT_abSwitch==0){
-                            keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                            INPUT_keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
                             keyState|=1<<INPUT_KEY_BACK;
                         }else{
                             data.input_message.key=INPUT_KEY_OK;
@@ -147,19 +150,19 @@ int INPUT_SDL_EventLoop(void *user_data) {
                             keyState&=~(1<<INPUT_KEY_SELECT);
                         }else if(e.key.keysym.scancode==4){//a=ok
                             if(INPUT_abSwitch==0){
-                                if(keyTimeouts[INPUT_KEY_BACK]>10){
+                                keyState&=~(1<<INPUT_KEY_OK);
+                            }else{
+                                if(INPUT_keyTimeouts[INPUT_KEY_BACK]>10){
                                     data.input_message.key=INPUT_KEY_BACK;
-                                    keyTimeouts[INPUT_KEY_BACK]=0;
+                                    INPUT_keyTimeouts[INPUT_KEY_BACK]=0;
                                 }
                                 keyState&=~(1<<INPUT_KEY_BACK);
-                            }else{
-                                keyState&=~(1<<INPUT_KEY_OK);
                             }
                         }else if(e.key.keysym.scancode==5){//b=back
                             if(INPUT_abSwitch==0){
-                                if(keyTimeouts[INPUT_KEY_BACK]>10){
+                                if(INPUT_keyTimeouts[INPUT_KEY_BACK]>10){
                                     data.input_message.key=INPUT_KEY_BACK;
-                                    keyTimeouts[INPUT_KEY_BACK]=0;
+                                    INPUT_keyTimeouts[INPUT_KEY_BACK]=0;
                                 }
                                 keyState&=~(1<<INPUT_KEY_BACK);
                             }else{
@@ -201,12 +204,12 @@ int INPUT_SDL_EventLoop(void *user_data) {
                                 data.input_message.key=INPUT_KEY_OK;
                                 keyState|=1<<INPUT_KEY_OK;
                             }else{
-                                keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                                INPUT_keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
                                 keyState|=1<<INPUT_KEY_BACK;
                             }
                         }else if(e.key.keysym.scancode==5){//b=back
                             if(INPUT_abSwitch==0){
-                                keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
+                                INPUT_keyTimeouts[INPUT_KEY_BACK]=UTIL_get_time_us();
                                 keyState|=1<<INPUT_KEY_BACK;
                             }else{
                                 data.input_message.key=INPUT_KEY_OK;

@@ -117,10 +117,34 @@ make -j10
 #copy libvlc libraries
 cp src/.libs/libvlccore.so.9 copy_libs/
 cp lib/.libs/libvlc.so.5 copy_libs/
-#copy libvlc plugin modules
-cp modules/.libs/*.so copy_modules
-#get rid of all graphics modules they pull in unnecessarry dependencies
-rm copy_modules/libgl*
+#copy only needed libvlc plugin modules
+cp modules/.libs/libaccess_alsa_plugin.so copy_modules
+cp modules/.libs/libadpcm_plugin.so copy_modules
+cp modules/.libs/libafile_plugin.so copy_modules
+cp modules/.libs/libalsa_plugin.so copy_modules
+cp modules/.libs/libamem_plugin.so copy_modules
+cp modules/.libs/libaudio_format_plugin.so copy_modules
+cp modules/.libs/libavcodec_plugin.so copy_modules
+cp modules/.libs/libavformat_plugin.so copy_modules
+cp modules/.libs/libconsole_logger_plugin.so copy_modules
+cp modules/.libs/libdummy_plugin.so copy_modules
+cp modules/.libs/libequalizer_plugin.so copy_modules
+cp modules/.libs/libfilesystem_plugin.so copy_modules
+cp modules/.libs/libfloat_mixer_plugin.so copy_modules
+cp modules/.libs/libgain_plugin.so copy_modules
+cp modules/.libs/libheadphone_channel_mixer_plugin.so copy_modules
+cp modules/.libs/libinteger_mixer_plugin.so copy_modules
+cp modules/.libs/liblogger_plugin.so copy_modules
+cp modules/.libs/libmemory_keystore_plugin.so copy_modules
+cp modules/.libs/libscale_plugin.so copy_modules
+cp modules/.libs/libscaletempo_pitch_plugin.so copy_modules
+cp modules/.libs/libscaletempo_plugin.so copy_modules
+cp modules/.libs/libsimple_channel_mixer_plugin.so copy_modules
+cp modules/.libs/libtrivial_channel_mixer_plugin.so copy_modules
+cp modules/.libs/libugly_resampler_plugin.so copy_modules
+cp modules/.libs/libstereo_widen_plugin.so copy_modules
+cp modules/.libs/libpacketizer_mpeg4audio_plugin.so copy_modules
+
 #find all library dependencies
 find "copy_modules/" -type f | while read -r file; do
     echo "[INFO] Processing: $file"
