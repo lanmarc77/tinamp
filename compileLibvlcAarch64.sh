@@ -144,6 +144,9 @@ cp modules/.libs/libtrivial_channel_mixer_plugin.so copy_modules
 cp modules/.libs/libugly_resampler_plugin.so copy_modules
 cp modules/.libs/libstereo_widen_plugin.so copy_modules
 cp modules/.libs/libpacketizer_mpeg4audio_plugin.so copy_modules
+cp modules/.libs/libpacketizer_mpegaudio_plugin.so copy_modules
+cp modules/.libs/libes_plugin.so copy_modules
+cp modules/.libs/libmp4_plugin.so copy_modules
 
 #find all library dependencies
 find "copy_modules/" -type f | while read -r file; do
