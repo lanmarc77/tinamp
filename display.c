@@ -70,7 +70,7 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
     }
 
     if(runsOnDesktop){
-        DISPLAY_window = SDL_CreateWindow( "TINAMP", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 480, 320, SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE);
+        DISPLAY_window = SDL_CreateWindow( "TINAMP", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE);
         if ( !DISPLAY_window ) {
 	        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_ERROR,"Could not get SDL window: %s\n",SDL_GetError());
             return;
