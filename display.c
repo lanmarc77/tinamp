@@ -55,6 +55,28 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
     SDL_LogSetPriority(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO);
     SDL_LogSetPriority(SDL_LOG_CATEGORY_AUDIO,SDL_LOG_PRIORITY_INFO);
     SDL_LogSetPriority(SDL_LOG_CATEGORY_INPUT,SDL_LOG_PRIORITY_INFO);
+    
+    /*SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    SDL_Texture *texture = NULL;
+    DISPLAY_window = SDL_CreateWindow("main", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320, 240, SDL_WINDOW_SHOWN);
+    DISPLAY_renderer = SDL_CreateRenderer(DISPLAY_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    DISPLAY_winSurface = SDL_CreateRGBSurface(0, 320, 240, 32, 0, 0, 0, 0);
+    texture = SDL_CreateTexture(DISPLAY_renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, 320, 240);
+    //DISPLAY_winSurface=SDL_GetWindowSurface(DISPLAY_window);
+    //DISPLAY_winSurface = SDL_CreateRGBSurface(0, 320, 240, 32, 0, 0, 0, 0);
+    SDL_Rect rt = {0};
+    rt.x = 50;
+    rt.y = 50;
+    rt.w = 30;
+    rt.h = 30;
+    SDL_FillRect(DISPLAY_winSurface, &rt, SDL_MapRGB(DISPLAY_winSurface->format, 0x00, 0xff, 0x00));
+    //MIYOO
+    SDL_UpdateTexture(texture, NULL, DISPLAY_winSurface->pixels, DISPLAY_winSurface->pitch);
+    SDL_RenderClear(DISPLAY_renderer);
+    SDL_RenderCopy(DISPLAY_renderer, texture, NULL, NULL);
+    SDL_RenderPresent(DISPLAY_renderer);
+    SDL_Delay(5000);
+    exit(0);*/
 
     if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER |SDL_INIT_JOYSTICK ) < 0 ) {
 	    SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_ERROR,"Could not init SDL system: %s\n",SDL_GetError());
@@ -75,7 +97,7 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
 	        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_ERROR,"Could not get SDL window: %s\n",SDL_GetError());
             return;
         }
-        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Window created OK\n");
+        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Desktop window created OK\n");
     }else{
         // Create our window
         DISPLAY_window = SDL_CreateWindow( "TINAMP", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320, 240, SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);

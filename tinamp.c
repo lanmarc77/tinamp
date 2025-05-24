@@ -786,13 +786,22 @@ int main(int argc, char* argv[])
                                             case 1:
                                                         if(sleepTimeSetupS>60){
                                                             if(sleepTimeOffTime!=0){
-                                                                sleepTimeSetupS-=60;
+                                                                if(rxData.input_message.key==INPUT_KEY_DOWN){
+                                                                    sleepTimeSetupS-=60;
+                                                                }else{
+                                                                    if(sleepTimeSetupS>5*60){
+                                                                        sleepTimeSetupS-=5*60;
+                                                                    }else{
+                                                                        sleepTimeSetupS=60;
+                                                                    }
+                                                                }
                                                             }
                                                             sleepTimeOffTime=now+(uint64_t)((uint64_t)sleepTimeSetupS*(uint64_t)1000000);
                                                         }else{
                                                             sleepTimeSetupS=0;
                                                             sleepTimeOffTime=0;
                                                         }
+                                                        SD_PLAY_setVolume(UI_MAIN_volume);//also reset volume as maybe the fading started already
                                                         break;
                                             case 2:
                                                         if(currentPlaySpeed>50){
@@ -830,14 +839,26 @@ int main(int argc, char* argv[])
                                             case 1:
                                                         if(sleepTimeSetupS<480*60){
                                                             if(sleepTimeOffTime!=0){
-                                                                sleepTimeSetupS+=60;
+                                                                if(rxData.input_message.key==INPUT_KEY_UP){
+                                                                    sleepTimeSetupS+=60;
+                                                                }else{
+                                                                    sleepTimeSetupS+=5*60;
+                                                                }
+                                                                if(sleepTimeSetupS>480*60) sleepTimeSetupS=480*60;
                                                             }
-                                                            if(sleepTimeSetupS==0) sleepTimeSetupS=60;
+                                                            if(sleepTimeSetupS==0) {
+                                                                if(rxData.input_message.key==INPUT_KEY_UP){
+                                                                    sleepTimeSetupS=60;
+                                                                }else{
+                                                                    sleepTimeSetupS=5*60;
+                                                                }
+                                                            }
                                                             sleepTimeOffTime=now+(uint64_t)((uint64_t)sleepTimeSetupS*(uint64_t)1000000);
                                                         }else{
                                                             sleepTimeSetupS=480*60;
                                                             sleepTimeOffTime=now+(uint64_t)((uint64_t)sleepTimeSetupS*(uint64_t)1000000);
                                                         }
+                                                        SD_PLAY_setVolume(UI_MAIN_volume);//also reset volume as maybe the fading started already
                                                         break;
                                             case 2:
                                                         if(currentPlaySpeed<250){
@@ -890,6 +911,7 @@ int main(int argc, char* argv[])
                                         if(sleepTimeSetupS==0) sleepTimeSetupS=60;
                                         if(sleepTimeOffTime!=0){
                                             sleepTimeOffTime=0;
+                                            SD_PLAY_setVolume(UI_MAIN_volume);//also reset volume as maybe the fading started already
                                         }else{
                                             sleepTimeOffTime=now+(uint64_t)((uint64_t)sleepTimeSetupS*(uint64_t)1000000);
                                         }
@@ -908,8 +930,11 @@ int main(int argc, char* argv[])
                             cancel=1;
                         }
                     }while(cancel==0);
-                    if((UI_MAIN_timeDiffNowS(sleepTimeOffTime)>0)&&(UI_MAIN_timeDiffNowS(sleepTimeOffTime)<=10)){//volume fade out if sleep timer nears end
-                        SD_PLAY_setVolume(UI_MAIN_volume-(UI_MAIN_volume/UI_MAIN_timeDiffNowS(sleepTimeOffTime)));
+                    if((UI_MAIN_timeDiffNowS(sleepTimeOffTime)>0)&&(UI_MAIN_timeDiffNowS(sleepTimeOffTime)<=30)){//volume fade out if sleep timer nears end
+                        int divBase=UI_MAIN_timeDiffNowS(sleepTimeOffTime)-20;
+                        if(divBase>=1){
+                            SD_PLAY_setVolume(UI_MAIN_volume-(UI_MAIN_volume/divBase));
+                        }
                     }
 
                     /*if((now-lastSdPlayMessage)/1000000>2){//2s no message from sd play

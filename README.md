@@ -8,19 +8,19 @@ TODO
 TODO
 
 # Compilation
-Docker is needed to cross compile for aarch64 architecture. 
-Currently Debian Bullseye is used for compilation.  
+Compilation needs docker installed.  
+Debian 11 Bullseye arm64 is used for compiling to support older libc operating systems.  
   
 1. Build ffmpeg  
-make libffmpeg_aarch64
+```make libffmpeg_aarch64```
   
-2. Build VLC  
-make libvlc_aarch64  
+2. Build VLC, also collects libraries for later packaging  
+```make libvlc_aarch64```
   
 3. Build application  
-make tinamp_aarch64 (or tinamp_amd64)
+```make tinamp_aarch64``` (or tinamp_amd64 for local development)
   
 4. Portmaster package bundle  
-make portmaster  
-package tinamp.zip is in .build directory  
+```make portmaster``` 
+package tinamp.zip is in .build directory as distributable portmaster package  
 

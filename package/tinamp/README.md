@@ -49,9 +49,9 @@ I tested different devices playing using the inbuilt speaker while not using the
 Please head over to the corresponding [Github repository](https://github.com/lanmarc77/tinamp) and open a ticket.  
   
 ## Packaged audio books
-The packaged audio books "Lewis Carroll - Alice's Adventures in Wonderland" and "Paula Dehmel - Das grüne Haus" were taken from the public domain archive [LibriVox](https://librivox.org/).  
+The packaged audio books *"Lewis Carroll - Alice's Adventures in Wonderland"* and *"Paula Dehmel - Das grüne Haus"* were taken from the public domain archive [LibriVox](https://librivox.org/).  
 License is available in the license folder as file LICENSE.LibriVox.txt.  
-
+  
 ## Controls
 | Button | Action |
 |--|--|
@@ -61,18 +61,31 @@ License is available in the license folder as file LICENSE.LibriVox.txt.
 |D-PAD LEFT|minus/backwards/down a little|
 |D-PAD UP|plus/forward/up more|
 |D-PAD DOWN|minus/backwards/down more|
-
+  
 ## Compile
 Compilation needs docker installed.  
+Debian 11 Bullseye arm64 is used for compiling to support older libc operating systems.  
 
-git clone https://github.com/lanmarc77/tinamp  
+```git clone https://github.com/lanmarc77/tinamp```  
   
 Everything of the following is build inside ./build directory:  
 
-make libffmpeg_aarch64 (to build ffmpeg libraries)  
+```make libffmpeg_aarch64``` (to build ffmpeg libraries)  
 
-make libvlc_aarch64 (to build libvlc libraries)  
+```make libvlc_aarch64``` (to build libvlc libraries and to reduce and collect required libraries for packaging)  
 
-make tinamp_aarch64 (to build the application)  
+```make tinamp_aarch64``` (to build the application)  
 
-make portmaster (to create a distributable portmaster .zip)
+```make portmaster``` (to create a distributable portmaster .zip)
+
+## Version history
+v00.00.04  
+
+ - sleep timer setup now also respects different D-PAD actions
+ - volume fade out starts and ends earlier before auto shutdown to allow cancelling and extending
+ - updated libraries to FFmpeg n4.4.6
+
+v00.00.03  
+
+ - initial release  
+

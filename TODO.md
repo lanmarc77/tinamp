@@ -4,6 +4,7 @@
  * support for audio book folders with sub folders e.g. title/volume1/..., title/volume2/...
  * allow the auto save interval to be adjusted and turned off
  * allow screen font color change
+ * allow background image decor
  * allow to disable device shutdown
 # Code
  * remove all not needed ESP32 code references and unused functions
