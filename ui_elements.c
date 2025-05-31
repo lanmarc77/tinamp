@@ -570,6 +570,7 @@ void UI_ELEMENTS_cls(){
   */
 void UI_ELEMENTS_displayOn(){
     UI_ELEMENTS_displayDark=false;
+    DISPLAY_useBackgroundImage(1);
     UI_ELEMENTS_disableChars(0);
 }
 
@@ -589,6 +590,7 @@ bool UI_ELEMENTS_isDisplayOff(){
   */
 void UI_ELEMENTS_displayOff(){
     DISPLAY_cls();
+    DISPLAY_useBackgroundImage(0);
     UI_ELEMENTS_update();//actually also display the empty display
     UI_ELEMENTS_displayDark=true;
 }

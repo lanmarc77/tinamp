@@ -4,10 +4,14 @@
  * support for audio book folders with sub folders e.g. title/volume1/..., title/volume2/...
  * allow the auto save interval to be adjusted and turned off
  * allow screen font color change
- * allow background image decor
  * allow to disable device shutdown
+ * key lock option
+
 # Code
  * remove all not needed ESP32 code references and unused functions
  * get rid of unused screens
  * make tinamp.c smaller
  * more/better logging
+ * also be able to set the system/alsa sound to 100%, support headphone detection?
+ * allow handling of MTP file transfers (removed, updated folders/files) while application runs
+ * check how to avoid audible clicks from speaker on some models when powering down

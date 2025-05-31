@@ -1,6 +1,11 @@
 # tinamp
 **T**his **I**s **N**ot **A** **M**usic **P**layer audio book player for retro handhelds
-
+  
+Have a look at the [Portmaster distribution directory](https://portmaster.games/detail.html?name=tinamp) for usage information and screenshots.  
+The latest portmaster autoinstall package can also be downloaded from this repositories release section.  
+  
+This repository documents the code and application architecture.  
+  
 # Directory structure
 TODO
 

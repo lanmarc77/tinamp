@@ -1,5 +1,5 @@
-.vscode/
-assets/
-saves/
-.build/
-tinamp_amd64
+/.vscode/
+/assets/
+/saves/
+/.build/
+/tinamp_amd64

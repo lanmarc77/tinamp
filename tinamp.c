@@ -592,16 +592,33 @@ int main(int argc, char* argv[])
                         if(reducedMode) reducedModeLastTimestamp=now;
                         if(pauseMode==0){//with chapter selection
                             if((rxData.input_message.key==INPUT_KEY_DOWN)||(rxData.input_message.key==INPUT_KEY_DOWN_STRONG)){
-                                if(selectedFile>1){
-                                    selectedFile--;
+                                if(rxData.input_message.key==INPUT_KEY_DOWN){
+                                    if(selectedFile>1){
+                                        selectedFile--;
+                                    }else{
+                                        selectedFile=UI_MAIN_amountOfFiles;
+                                    }
                                 }else{
-                                    selectedFile=UI_MAIN_amountOfFiles;
+                                    if(selectedFile>5){
+                                        selectedFile-=5;
+                                    }else{
+                                        selectedFile=UI_MAIN_amountOfFiles;
+                                    }
+
                                 }
                             }else if((rxData.input_message.key==INPUT_KEY_UP)||(rxData.input_message.key==INPUT_KEY_UP_STRONG)){
-                                if(selectedFile<UI_MAIN_amountOfFiles){
-                                    selectedFile++;
+                                if(rxData.input_message.key==INPUT_KEY_UP){
+                                    if(selectedFile<UI_MAIN_amountOfFiles){
+                                        selectedFile++;
+                                    }else{
+                                        selectedFile=1;
+                                    }
                                 }else{
-                                    selectedFile=1;
+                                    if(selectedFile+5<=UI_MAIN_amountOfFiles){
+                                        selectedFile+=5;
+                                    }else{
+                                        selectedFile=1;
+                                    }
                                 }
                             }else if((rxData.input_message.key==INPUT_KEY_OK)||((reducedMode)&&(rxData.input_message.key==INPUT_KEY_BACK))){
                                 mainSM=UI_MAIN_RUN_SM_PLAY_INIT;
