@@ -16,6 +16,7 @@ uint8_t DISPLAY_setFont(uint16_t fontNumber);
 void DISPLAY_screenSaver();
 void DISPLAY_screenSaverOff();
 void DISPLAY_clearCache();
+void DISPLAY_useBackgroundImage(uint8_t use);
 #endif
 
 

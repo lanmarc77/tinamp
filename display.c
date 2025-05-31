@@ -29,6 +29,8 @@
 #include "utf8.h"
 
 SDL_Surface* DISPLAY_winSurface = NULL;
+SDL_Surface* DISPLAY_backgroundImageSurface = NULL;
+SDL_Texture* DISPLAY_backgroundImageTexture = NULL;
 SDL_Window* DISPLAY_window = NULL;
 TTF_Font* DISPLAY_font=NULL;
 FC_Font* DISPLAY_fc_font=NULL;
@@ -42,19 +44,47 @@ uint64_t DISPLAY_screenSaverLastTime=0;
 uint8_t DISPLAY_rotateActive=0;
 uint8_t noUseSDL=1;
 uint8_t DISPLAY_invalidateCache=0;
-
+uint8_t DISPLAY_disableBackgroundImage=0;
 
 uint32_t DISPLAY_grid[4][16]={0};
 uint32_t DISPLAY_gridLast[4][16]={0};
 char DISPLAY_fontPath[FF_FILE_PATH_MAX];
 
-
+void DISPLAY_useBackgroundImage(uint8_t use){
+    if(use){
+        DISPLAY_disableBackgroundImage=0;
+    }else{
+        DISPLAY_disableBackgroundImage=1;
+    }
+}
 void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
 
     SDL_LogSetPriority(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO);
     SDL_LogSetPriority(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO);
     SDL_LogSetPriority(SDL_LOG_CATEGORY_AUDIO,SDL_LOG_PRIORITY_INFO);
     SDL_LogSetPriority(SDL_LOG_CATEGORY_INPUT,SDL_LOG_PRIORITY_INFO);
+    
+    /*SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    SDL_Texture *texture = NULL;
+    DISPLAY_window = SDL_CreateWindow("main", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320, 240, SDL_WINDOW_SHOWN);
+    DISPLAY_renderer = SDL_CreateRenderer(DISPLAY_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    DISPLAY_winSurface = SDL_CreateRGBSurface(0, 320, 240, 32, 0, 0, 0, 0);
+    texture = SDL_CreateTexture(DISPLAY_renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, 320, 240);
+    //DISPLAY_winSurface=SDL_GetWindowSurface(DISPLAY_window);
+    //DISPLAY_winSurface = SDL_CreateRGBSurface(0, 320, 240, 32, 0, 0, 0, 0);
+    SDL_Rect rt = {0};
+    rt.x = 50;
+    rt.y = 50;
+    rt.w = 30;
+    rt.h = 30;
+    SDL_FillRect(DISPLAY_winSurface, &rt, SDL_MapRGB(DISPLAY_winSurface->format, 0x00, 0xff, 0x00));
+    //MIYOO
+    SDL_UpdateTexture(texture, NULL, DISPLAY_winSurface->pixels, DISPLAY_winSurface->pitch);
+    SDL_RenderClear(DISPLAY_renderer);
+    SDL_RenderCopy(DISPLAY_renderer, texture, NULL, NULL);
+    SDL_RenderPresent(DISPLAY_renderer);
+    SDL_Delay(5000);
+    exit(0);*/
 
     if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER |SDL_INIT_JOYSTICK ) < 0 ) {
 	    SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_ERROR,"Could not init SDL system: %s\n",SDL_GetError());
@@ -75,7 +105,7 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
 	        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_ERROR,"Could not get SDL window: %s\n",SDL_GetError());
             return;
         }
-        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Window created OK\n");
+        SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Desktop window created OK\n");
     }else{
         // Create our window
         DISPLAY_window = SDL_CreateWindow( "TINAMP", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320, 240, SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP);
@@ -87,7 +117,8 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
         SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Window created.\n");
         SDL_SetWindowFullscreen(DISPLAY_window, SDL_WINDOW_FULLSCREEN);
     }
-    SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Fullscreen enabled.\n");
+    SDL_GetWindowSize(DISPLAY_window, &DISPLAY_maxW, &DISPLAY_maxH);
+    SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Fullscreen enabled to %ix%i.\n",DISPLAY_maxW,DISPLAY_maxH);
 
     DISPLAY_renderer = SDL_CreateRenderer( DISPLAY_window, -1, SDL_RENDERER_ACCELERATED );
     if ( !DISPLAY_renderer ) {
@@ -122,6 +153,13 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
     strcpy(&DISPLAY_fontPath[0],fontPath);
     strcat(&DISPLAY_fontPath[0],"assets/");
     DISPLAY_setFont(0);
+    DISPLAY_backgroundImageSurface=SDL_LoadBMP("assets/bg.bmp");
+    if(DISPLAY_backgroundImageSurface==NULL){
+        DISPLAY_backgroundImageSurface=SDL_LoadBMP("assets/bg_default.bmp");
+    }
+    if(DISPLAY_backgroundImageSurface!=NULL){
+        DISPLAY_backgroundImageTexture=SDL_CreateTextureFromSurface(DISPLAY_renderer, DISPLAY_backgroundImageSurface);
+    }
     SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"SDL init finished.\n");
     noUseSDL=0;
 
@@ -154,29 +192,48 @@ uint8_t DISPLAY_checkUpdateNeeded(){
 
 void DISPLAY_update(){
     if(DISPLAY_checkUpdateNeeded()==0){
-	return;
+	    return;
     }
     if(noUseSDL){
-	printf("\033[2J");
-	printf("\033[0;0H");
-	for(int y=0;y<4;y++){
-	    for(int x=0;x<16;x++){
-		if((DISPLAY_grid[y][x]!=0)&&(DISPLAY_grid[y][x]!=' ')){
-		    printf("%c",DISPLAY_grid[y][x]);
-		}else{
-		    printf(" ");
-		}
-	    }
-	    printf("\n");
-	}
-
+        printf("\033[2J");
+        printf("\033[0;0H");
+        for(int y=0;y<4;y++){
+            for(int x=0;x<16;x++){
+                if((DISPLAY_grid[y][x]!=0)&&(DISPLAY_grid[y][x]!=' ')){
+                    printf("%c",DISPLAY_grid[y][x]);
+                }else{
+                    printf(" ");
+                }
+            }
+            printf("\n");
+        }
     }else{
         SDL_RenderClear( DISPLAY_renderer );
 
         SDL_Texture* target;
         if(DISPLAY_rotateActive){
-             target = SDL_CreateTexture(DISPLAY_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DISPLAY_maxW, DISPLAY_maxH);
+            target = SDL_CreateTexture(DISPLAY_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, DISPLAY_maxW, DISPLAY_maxH);
             SDL_SetRenderTarget(DISPLAY_renderer, target);
+        }
+        if((!DISPLAY_disableBackgroundImage)&&(DISPLAY_backgroundImageTexture!=NULL)){
+            int bgW,bgH;
+            SDL_QueryTexture(DISPLAY_backgroundImageTexture, NULL, NULL, &bgW, &bgH);
+            //select a source rect that fits current aspect ratio and is centered
+            SDL_Rect sRect={0};
+            uint64_t wAspect = DISPLAY_maxW * 1000 / DISPLAY_maxH;
+            uint64_t iAspect  = bgW  * 1000 / bgH;
+            if(iAspect>wAspect){
+                sRect.w=(bgH*wAspect)/1000;
+                sRect.x=(bgW-sRect.w)/2;
+                sRect.y=0;
+                sRect.h=bgH;
+            }else{
+                sRect.h=(bgW*1000)/wAspect;
+                sRect.y=(bgH-sRect.h)/2;
+                sRect.x=0;
+                sRect.w=bgW;
+            }
+            SDL_RenderCopy(DISPLAY_renderer,DISPLAY_backgroundImageTexture,&sRect,NULL);
         }
         SDL_SetRenderDrawColor( DISPLAY_renderer, 0, 0, 0, 255 );
         int maxCharSizeWidth=DISPLAY_maxW/16;
@@ -200,6 +257,9 @@ void DISPLAY_update(){
                         SDL_FLIP_NONE);
         }
         SDL_RenderPresent( DISPLAY_renderer );
+        if(DISPLAY_rotateActive){
+            SDL_DestroyTexture(target);
+        }
     }
 }
 

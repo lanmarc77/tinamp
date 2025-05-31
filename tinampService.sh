@@ -1,10 +1,22 @@
 #!/bin/bash
+source /etc/profile
 
-#wait for sway to startup
-while ! pgrep -x "swaybg" > /dev/null; do
-    sleep 1
+type=0
+while [ "$type" -eq 0 ]; do
+  if pgrep -x "/usr/bin/weston" >/dev/null; then
+    type=1
+  elif pgrep -x "swaybg" >/dev/null; then
+    type=2
+  fi
+  sleep 0.1
 done
-systemctl stop essway
-/roms/ports/Tinamp.sh
-systemctl start essway
+if [ "$type" -eq 1 ]; then
+  systemctl stop weston
+  /usr/bin/weston --flight-rec-scopes= --log=/var/log/weston_tinamp.log -- /roms/ports/Tinamp.sh
+  systemctl start weston
+elif [ "$type" -eq 2 ]; then
+  systemctl stop essway
+  /roms/ports/Tinamp.sh
+  systemctl start essway
+fi
 while :; do sleep 10; done
