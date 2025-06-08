@@ -13,5 +13,4 @@
  * make tinamp.c smaller
  * more/better logging
  * also be able to set the system/alsa sound to 100%, support headphone detection?
- * allow handling of MTP file transfers (removed, updated folders/files) while application runs
  * check how to avoid audible clicks from speaker on some models when powering down

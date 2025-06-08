@@ -84,6 +84,10 @@ Everything of the following is build inside ./build directory:
 ```make portmaster``` (to create a distributable portmaster .zip)
 
 ## Version history
+v00.00.05  
+
+ - application detects/handles changes within the audio book folder (e.g. during MTP file transfers)
+
 v00.00.04  
 
  - sleep timer setup and chapter select now also respect different D-PAD actions

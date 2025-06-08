@@ -652,4 +652,24 @@ void SCREENS_fwAcceptSetup(uint8_t fwPersisted,uint8_t blinkMode){
     }
 }
 
+void SCREEN_fileTransfer(){
+    if(UI_ELEMENTS_isDisplayOff()) return;
+    char b[10];
+    uint64_t now=UTIL_get_time_us();
+    UI_ELEMENTS_cls();
+    UI_ELEMENTS_mainSymbol(3);
+    if(((now/1000)%1000)<250){
+		  sprintf(&b[0],"  |  ");
+    }else if(((now/1000)%1000)<500){
+		  sprintf(&b[0],"  /  ");
+    }else if(((now/1000)%1000)<750){
+		  sprintf(&b[0],"  -  ");
+    }else{
+		  sprintf(&b[0],"  \\  ");
+    }
+  	UI_ELEMENTS_textScrolly(4,1,5,&b[0]);
+
+    UI_ELEMENTS_update();
+}
+
 #endif

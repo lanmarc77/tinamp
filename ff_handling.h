@@ -40,5 +40,8 @@
 
 uint8_t FF_getList(char* folderPath,uint16_t* amountOfEntries,uint16_t* sortedIdArray,uint8_t ffType,Queue* outQueue, Queue* inQueue, char* searchString,int32_t* searchId);
 uint8_t FF_getNameByID(char* folderBasePath,uint16_t ID,char *resultName,uint8_t ffType);
+uint8_t FF_initFolderWatcher(char* folderBasePath);
+uint8_t FF_checkFolderChanges();
+void FF_closeFolderWatcher();
 
 #endif
