@@ -6,6 +6,8 @@
  * allow screen font color change
  * allow to disable device shutdown
  * key lock option
+ * explicit support for suspend and resume
+ * allow seek while playing
 
 # Code
  * remove all not needed ESP32 code references and unused functions
