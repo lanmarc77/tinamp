@@ -46,5 +46,6 @@ void SCREENS_bookmarkDeletionSetup(int32_t numberOfFiles,uint8_t blinkMode);
 void SCREENS_setupSelect();
 void SCREENS_reducedModeSetup(uint8_t reducedMode,uint8_t blinkMode);
 void SCREENS_fwAcceptSetup(uint8_t fwPersisted,uint8_t blinkMode);
+void SCREEN_fileTransfer();
 
 #endif

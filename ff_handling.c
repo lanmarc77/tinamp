@@ -13,7 +13,10 @@
 */
 #ifndef FF_HANDLING_C
 #define FF_HANDLING_C
+#include <sys/inotify.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL.h>
 #include <string.h>
@@ -21,10 +24,48 @@
 #include <dirent.h>
 #include "ff_handling.h"
 #include "format_helper.h"
-//#include "sd_card.h"
-//#include "ui_main.h"
 
-//#define FF_LOG_TAG "FF"
+int FF_inotifyFileDescriptor=-1;
+int FF_inotifyWatchDescriptor=-1;
+
+uint8_t FF_initFolderWatcher(char* folderBasePath){
+    // initialize inotify
+    FF_inotifyFileDescriptor = inotify_init();
+    if (FF_inotifyFileDescriptor < 0) {
+        return 1;
+    }
+    // add a watch on the folder
+    FF_inotifyWatchDescriptor = inotify_add_watch(FF_inotifyFileDescriptor, folderBasePath, IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO);
+    if (FF_inotifyWatchDescriptor < 0) {
+        close(FF_inotifyFileDescriptor);
+        return 2;
+    }
+    int currentFlags = fcntl(FF_inotifyFileDescriptor, F_GETFL, 0);
+    fcntl(FF_inotifyFileDescriptor, F_SETFL, currentFlags | O_NONBLOCK);//enable non blocking read
+    return 0;
+}
+
+uint8_t FF_checkFolderChanges(){
+    char buffer[sizeof(struct inotify_event)*5];//space for 5 events
+    if(FF_inotifyWatchDescriptor>=0){
+        int length=0;
+        uint8_t changesFound=0;
+        do{
+            length = read(FF_inotifyFileDescriptor, buffer, sizeof(buffer));//read possible changes
+            if(length>=0) changesFound=1;
+        }while(length>=0);
+        return changesFound;
+    }else{//report no changes if initialization failed
+        return 0;
+    }
+}
+
+void FF_closeFolderWatcher(){
+    if(FF_inotifyWatchDescriptor>=0){
+        inotify_rm_watch(FF_inotifyFileDescriptor, FF_inotifyWatchDescriptor);
+        close(FF_inotifyFileDescriptor);
+    }
+}
 
 /**
   * @brief  gets a sorted list of files or folders inside a given path

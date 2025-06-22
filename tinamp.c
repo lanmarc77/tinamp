@@ -53,6 +53,7 @@ SAVES_settings_t UI_MAIN_settings;
 #define UI_MAIN_RUN_SM_PAUSED 20
 #define UI_MAIN_RUN_SM_PLAY_INIT 24
 #define UI_MAIN_RUN_SM_PLAYING 25
+#define UI_MAIN_RUN_SM_FOLDER_CHANGE 30
 #define UI_MAIN_DEFAULT_SLEEP_TIME_S 300
 
 uint32_t UI_MAIN_timeDiffNowS(uint64_t timeStamp){
@@ -162,7 +163,7 @@ int main(int argc, char* argv[])
         uint16_t len = slash - argv[0] +1;//+1 to include the trailing slash
         strncpy(localPath, argv[0], len);
         localPath[len] = '\0';
-        if(strcmp(&argv[0][strlen(argv[0])-5],"amd64")==0) runsOnDesktop=1;
+        if(strcmp(&argv[0][strlen(argv[0])-5],"local")==0) runsOnDesktop=1;
     }
 
     strcpy(&UI_MAIN_baseFolder[0],&localPath[0]);
@@ -218,7 +219,11 @@ int main(int argc, char* argv[])
         UTIL_getCPUGovernor(&governorP[0]);
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"New CPU governor: %s.\n",&governorP[0]);
     }
-    
+    if(FF_initFolderWatcher(&UI_MAIN_baseFolder[0])==0){
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Folder watcher initialized OK.\n");
+    }else{
+        SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_WARN,"Folder watcher could not be initialized. Auto detection of changes wont be available.\n");
+    }
 
     SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Entering main event loop.\n");
 
@@ -463,6 +468,10 @@ int main(int argc, char* argv[])
                             quit=1;//allow manual emulation by using select here in this menu
                         }
                     }
+                    if(FF_checkFolderChanges()!=0){
+                        mainSM=UI_MAIN_RUN_SM_FOLDER_CHANGE;
+                        extraFlags=0;
+                    }
                     break;
             case UI_MAIN_RUN_SM_SETUP_MENU:
                     if(UI_MAIN_setupMenu()!=0){
@@ -682,6 +691,11 @@ int main(int argc, char* argv[])
                         if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
                             quit=1;
                         }
+                    }
+                    if(FF_checkFolderChanges()!=0){
+                        resumePlayOnly=0;
+                        mainSM=UI_MAIN_RUN_SM_FOLDER_CHANGE;
+                        extraFlags=0;
                     }
                     break;
             case UI_MAIN_RUN_SM_PLAY_INIT:
@@ -953,7 +967,14 @@ int main(int argc, char* argv[])
                             SD_PLAY_setVolume(UI_MAIN_volume-(UI_MAIN_volume/divBase));
                         }
                     }
-
+                    if(FF_checkFolderChanges()!=0){
+                        txData.type=QUEUE_DATA_SD_PLAY;
+                        txData.sd_play_message.msgType=SD_PLAY_MSG_TYPE_STOP_PLAY;
+                        SD_PLAY_sendMessage(&txData);
+                        resumePlayOnly=0;
+                        mainSM=UI_MAIN_RUN_SM_FOLDER_CHANGE;
+                        saveFlag=0;
+                    }
                     /*if((now-lastSdPlayMessage)/1000000>2){//2s no message from sd play
                         //ESP_LOGE(UI_MAIN_LOG_TAG,"PLAYTIMEOUT");
                         mainSM=UI_MAIN_RUN_SM_PAUSED;
@@ -987,6 +1008,20 @@ int main(int argc, char* argv[])
                         SAVES_saveSettings(&UI_MAIN_settings);
                     }
                     break;
+            case UI_MAIN_RUN_SM_FOLDER_CHANGE:
+                    if(UI_MAIN_readKeyAndVLCQueue(1,queueWaitTime,&rxData)!=0){
+                        if((rxData.input_message.key==INPUT_KEY_BACK)||(rxData.input_message.key==INPUT_KEY_OK)){
+                            mainSM=UI_MAIN_RUN_SM_INIT;
+                        }else if(rxData.input_message.key==INPUT_KEY_BACK_LONG){
+                            quit=2; // quitting with 2 means power down device
+                        }else if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                            quit=1;
+                        }
+                    }
+                    SCREEN_fileTransfer();
+                    FF_checkFolderChanges();//clear the changes that happen during active file transfer
+                    UI_MAIN_offTimestamp=now;//disable auto shutdown
+                    break;
         }//of switch
         if(!UI_ELEMENTS_isDisplayOff()){
             if(reducedMode==1){
@@ -1006,7 +1041,8 @@ int main(int argc, char* argv[])
             }
         }
 	}//of while running
-
+    
+    FF_closeFolderWatcher();
     if(governor[0]!=0){
         SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION,SDL_LOG_PRIORITY_INFO,"Setting CPU governor back to: %s.\n",&governor[0]);
         UTIL_setCPUGovernor(&governor[0]);

@@ -157,6 +157,8 @@ int SD_PLAY_messageLoopThread(void *user_data){
                     libvlc_media_player_set_pause(SD_PLAY_currentPlayer, 0);
                     data.sd_play_message.msgType=SD_PLAY_MSG_TYPE_RESUMED;
                     queue_push(SD_PLAY_outQueue,&data);
+                }else if(data.sd_play_message.msgType==SD_PLAY_MSG_TYPE_STOP_PLAY){
+                    libvlc_media_player_stop(SD_PLAY_currentPlayer);
                 }
             }else if(data.type==QUEUE_DATA_QUIT){
                 if(SD_PLAY_currentPlayer!=NULL){
