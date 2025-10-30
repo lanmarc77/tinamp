@@ -301,6 +301,8 @@ void UI_ELEMENTS_mainSymbol(uint8_t symbol){
         DISPLAY_printStr(0,1,"                ");
         DISPLAY_printStr(0,2,"    (^_^)Zzz    ");
         DISPLAY_printStr(0,3,"      LCD       ");
+    }else if(symbol==32){//key lock
+        DISPLAY_printStr(13,0," #");
     }
 }
 

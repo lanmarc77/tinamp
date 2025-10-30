@@ -229,6 +229,7 @@ int main(int argc, char* argv[])
 
     uint8_t mainSM=UI_MAIN_RUN_SM_INIT;
     uint8_t pauseMode=0;
+    uint8_t keyLock=0;
     uint16_t selectedFile=1;
     uint16_t selectedFolder=1;
     uint16_t oldSelectedFile=1;
@@ -464,7 +465,7 @@ int main(int argc, char* argv[])
                             }
                         }else if(rxData.input_message.key==INPUT_KEY_BACK_LONG){
                             quit=2; // quitting with 2 means power down device
-                        }else if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                        }else if(rxData.input_message.key==INPUT_KEY_START_AND_SELECT){
                             quit=1;//allow manual emulation by using select here in this menu
                         }
                     }
@@ -688,7 +689,7 @@ int main(int argc, char* argv[])
                                 }
                             }
                         }
-                        if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                        if(rxData.input_message.key==INPUT_KEY_START_AND_SELECT){
                             quit=1;
                         }
                     }
@@ -733,6 +734,7 @@ int main(int argc, char* argv[])
                     pauseMode=0;
                     saveFlag=0;
                     resumePlayOnly=0;
+                    keyLock=0;
 
                     break;
             case UI_MAIN_RUN_SM_PLAYING:
@@ -745,9 +747,9 @@ int main(int argc, char* argv[])
                                 playOverlayMode=0;
                             }
                             if(playOverlayMode==0){
-                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),0);
+                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),0,keyLock);
                             }else{
-                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),(now-lastPlayOverlayChangedTime)/1000);
+                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),(now-lastPlayOverlayChangedTime)/1000,keyLock);
                             }
                         }
                     }
@@ -801,6 +803,16 @@ int main(int argc, char* argv[])
                                 }
                             }
                             if(rxData.type==QUEUE_DATA_INPUT){//wait for incoming key messages
+                                if(rxData.input_message.key==INPUT_KEY_START_AND_OK){
+                                    if(keyLock){
+                                        keyLock=0;
+                                    }else{
+                                        keyLock=1;
+                                    }
+                                }
+                                if(keyLock){
+                                    rxData.input_message.key=INPUT_KEY_NONE;
+                                }
                                 if((rxData.input_message.key==INPUT_KEY_DOWN)||(rxData.input_message.key==INPUT_KEY_DOWN_STRONG)){
                                     if(playOverlayActive){//first turn should not already do some action
                                         switch(playOverlayMode){
@@ -947,7 +959,7 @@ int main(int argc, char* argv[])
                                             sleepTimeOffTime=now+(uint64_t)((uint64_t)sleepTimeSetupS*(uint64_t)1000000);
                                         }
                                     }
-                                }else if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                                }else if(rxData.input_message.key==INPUT_KEY_START_AND_SELECT){
                                     txData.type=QUEUE_DATA_SD_PLAY;
                                     txData.sd_play_message.msgType=SD_PLAY_MSG_TYPE_PAUSE;
                                     SD_PLAY_sendMessage(&txData);
@@ -1014,7 +1026,7 @@ int main(int argc, char* argv[])
                             mainSM=UI_MAIN_RUN_SM_INIT;
                         }else if(rxData.input_message.key==INPUT_KEY_BACK_LONG){
                             quit=2; // quitting with 2 means power down device
-                        }else if(rxData.input_message.key==INPUT_KEY_SELECT_AND_START){
+                        }else if(rxData.input_message.key==INPUT_KEY_START_AND_SELECT){
                             quit=1;
                         }
                     }
