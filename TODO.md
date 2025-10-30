@@ -5,7 +5,6 @@
  * allow the auto save interval to be adjusted and turned off
  * allow screen font color change
  * allow to disable device shutdown
- * key lock option
  * explicit support for suspend and resume
  * allow seek while playing
 

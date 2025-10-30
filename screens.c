@@ -211,9 +211,10 @@ void SCREENS_playOverlay(uint8_t mode, int64_t volume,uint16_t playSpeed,uint8_t
   * @param allPlaySecond seconds length of the current track
   * @param sleepTimeSecondsLeft if >0 the seconds left of the sleep timer is displayed
   * @param playOverlaySecondsLeft if >0 the seconds left of the sub menu state within the play overlay screen
+  * @param keyLock if >0 the key lock is currently active
   * 
   */
-void SCREENS_play(uint16_t selectedFile,uint16_t amountOfFiles,char* folderName,uint16_t currentPlayMinute,uint8_t currentPlaySecond,uint8_t percent,uint8_t repeatMode,uint16_t allPlayMinute,uint8_t allPlaySecond,uint32_t sleepTimeSecondsLeft,uint32_t playOverlaySecondsLeft){
+void SCREENS_play(uint16_t selectedFile,uint16_t amountOfFiles,char* folderName,uint16_t currentPlayMinute,uint8_t currentPlaySecond,uint8_t percent,uint8_t repeatMode,uint16_t allPlayMinute,uint8_t allPlaySecond,uint32_t sleepTimeSecondsLeft,uint32_t playOverlaySecondsLeft,uint8_t keyLock){
     uint64_t now=UTIL_get_time_us();
     char b[3]={0};
     if(UI_ELEMENTS_isDisplayOff()) return;
@@ -238,6 +239,9 @@ void SCREENS_play(uint16_t selectedFile,uint16_t amountOfFiles,char* folderName,
     }
     UI_ELEMENTS_batteryIndicator();
     UI_ELEMENTS_sleepTimeLeft(sleepTimeSecondsLeft);
+    if(keyLock){
+        UI_ELEMENTS_mainSymbol(32);
+    }
     UI_ELEMENTS_update();
 }
 
