@@ -12,6 +12,7 @@ while [ "$type" -eq 0 ]; do
 done
 if [ "$type" -eq 1 ]; then
   systemctl stop weston
+  pkill -9 weston >> /dev/null 2>&1
   /usr/bin/weston --flight-rec-scopes= --log=/var/log/weston_tinamp.log -- /roms/ports/Tinamp.sh
   systemctl start weston
 elif [ "$type" -eq 2 ]; then

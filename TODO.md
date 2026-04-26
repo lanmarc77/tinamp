@@ -1,6 +1,6 @@
 # Features
  * support for .m3u play lists with UTF-8 support
- * implement presorted.txt support with UTF-8 support
+ * implement presorted.txt support with UTF-8 support OR implement presorted.txt generation on device
  * support for audio book folders with sub folders e.g. title/volume1/..., title/volume2/...
  * allow the auto save interval to be adjusted and turned off
  * allow screen font color change

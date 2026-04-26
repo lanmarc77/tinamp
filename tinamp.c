@@ -64,7 +64,7 @@ uint32_t UI_MAIN_timeDiffNowS(uint64_t timeStamp){
     return 0;
 }
 
-char UI_MAIN_baseFolder[FF_FILE_PATH_MAX]={0};
+char UI_MAIN_baseFolder[FF_FILE_PATH_MAX*2]={0};
 char* UI_MAIN_searchString=NULL;
 int32_t* UI_MAIN_searchId=NULL;
 
@@ -76,7 +76,7 @@ int UI_MAIN_scanSortTaskAllBooks(void *user_data){
     return 0;
 }
 
-char UI_MAIN_folderPath[FF_FILE_PATH_MAX];
+char UI_MAIN_folderPath[FF_FILE_PATH_MAX*2];
 uint16_t UI_MAIN_amountOfFiles=0;
 uint16_t UI_MAIN_sortedFileIDs[FF_MAX_SORT_ELEMENTS];
 int UI_MAIN_scanSortTaskOneBook(void *user_data){
@@ -263,9 +263,10 @@ int main(int argc, char* argv[])
     memset(&UI_MAIN_saveState,0,sizeof(SAVES_saveState_t));
     memset(&UI_MAIN_settings,0,sizeof(SAVES_settings_t));
 
-    char UI_MAIN_selectedFolderName[FF_FILE_PATH_MAX];//="Der Medicus Ein Roman von Noha Gordon";
-    char UI_MAIN_selectedFileName[FF_FILE_PATH_MAX];
-    char UI_MAIN_filePath[FF_FILE_PATH_MAX];
+    char UI_MAIN_selectedFolderName[FF_FILE_PATH_MAX*2];
+    char UI_MAIN_selectedFileName[FF_FILE_PATH_MAX*2];
+    char UI_MAIN_filePath[FF_FILE_PATH_MAX*2];
+    char UI_MAIN_scrollyText[FF_FILE_PATH_MAX*2];
     uint8_t sleepOffSM=0;
 
     SDL_Thread *ffScanThread=NULL;
@@ -357,6 +358,7 @@ int main(int argc, char* argv[])
                                 selectedFolder=1;
                                 UI_MAIN_selectedFolderName[0]=0;
                                 UI_MAIN_selectedFileName[0]=0;
+                                UI_MAIN_scrollyText[0]=0;
                                 mainSM=UI_MAIN_RUN_SM_FOLDER_SELECTION;
                                 extraFlags=0;
                                 if(searchId>=0){//did we search for a folder that was last listened and found one?
@@ -524,6 +526,10 @@ int main(int argc, char* argv[])
                                     strcpy(&UI_MAIN_filePath[0],&UI_MAIN_folderPath[0]);
                                     strcat(&UI_MAIN_filePath[0],"/");
                                     strcat(&UI_MAIN_filePath[0],&UI_MAIN_selectedFileName[0]);
+                                    
+                                    strcpy(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFolderName[0]);
+                                    strcat(&UI_MAIN_scrollyText[0],": ");
+                                    strcat(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFileName[0]);
 
                                     int64_t rt=SD_PLAY_getRuntime(&UI_MAIN_filePath[0]);
                                     if(rt>0){
@@ -573,7 +579,7 @@ int main(int argc, char* argv[])
                     playOverlayMode=0;
                     if(pauseMode==0){//with chapter selection
                         percent=(currentPlayMinute*60+currentPlaySecond)*100/(allPlayMinute*60+allPlaySecond);
-                        SCREENS_pause0(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,UI_MAIN_timeDiffNowS(sleepTimeOffTime));
+                        SCREENS_pause0(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_scrollyText[0],currentPlayMinute,currentPlaySecond,percent,UI_MAIN_timeDiffNowS(sleepTimeOffTime));
                         if(reducedMode){
                             if((UTIL_get_time_us()-reducedModeLastTimestamp)/1000>10000){//go back to book selection after 10s in chapter selection mode
                                 reducedModeLastTimestamp=now;
@@ -584,7 +590,7 @@ int main(int argc, char* argv[])
                         }
                     }else if(pauseMode==1){//with time selection
                         percent=(newPlayMinute*60+currentPlaySecond)*100/(allPlayMinute*60+allPlaySecond);
-                        SCREENS_pause1(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],newPlayMinute,currentPlaySecond,percent,UI_MAIN_timeDiffNowS(sleepTimeOffTime));
+                        SCREENS_pause1(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_scrollyText[0],newPlayMinute,currentPlaySecond,percent,UI_MAIN_timeDiffNowS(sleepTimeOffTime));
                         if(reducedMode){
                             if((UTIL_get_time_us()-reducedModeLastTimestamp)/1000>10000){//switch to chapter selection or book selection after 10s in time selection mode
                                 reducedModeLastTimestamp=now;
@@ -616,6 +622,12 @@ int main(int argc, char* argv[])
                                     }
 
                                 }
+                                if(FF_getNameByID(&UI_MAIN_folderPath[0],UI_MAIN_sortedFileIDs[selectedFile-1],&UI_MAIN_selectedFileName[0],1)==0){
+                                    strcpy(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFolderName[0]);
+                                    strcat(&UI_MAIN_scrollyText[0],": ");
+                                    strcat(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFileName[0]);
+                                    UI_ELEMENTS_textScrollyReset(0,0,14);
+                                }
                             }else if((rxData.input_message.key==INPUT_KEY_UP)||(rxData.input_message.key==INPUT_KEY_UP_STRONG)){
                                 if(rxData.input_message.key==INPUT_KEY_UP){
                                     if(selectedFile<UI_MAIN_amountOfFiles){
@@ -629,6 +641,12 @@ int main(int argc, char* argv[])
                                     }else{
                                         selectedFile=1;
                                     }
+                                }
+                                if(FF_getNameByID(&UI_MAIN_folderPath[0],UI_MAIN_sortedFileIDs[selectedFile-1],&UI_MAIN_selectedFileName[0],1)==0){
+                                    strcpy(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFolderName[0]);
+                                    strcat(&UI_MAIN_scrollyText[0],": ");
+                                    strcat(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFileName[0]);
+                                    UI_ELEMENTS_textScrollyReset(0,0,14);
                                 }
                             }else if((rxData.input_message.key==INPUT_KEY_OK)||((reducedMode)&&(rxData.input_message.key==INPUT_KEY_BACK))){
                                 mainSM=UI_MAIN_RUN_SM_PLAY_INIT;
@@ -705,6 +723,11 @@ int main(int argc, char* argv[])
                         strcat(&UI_MAIN_filePath[0],"/");
                         strcat(&UI_MAIN_filePath[0],&UI_MAIN_selectedFileName[0]);
 
+                        strcpy(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFolderName[0]);
+                        strcat(&UI_MAIN_scrollyText[0],": ");
+                        strcat(&UI_MAIN_scrollyText[0],&UI_MAIN_selectedFileName[0]);
+                        UI_ELEMENTS_textScrollyReset(0,0,14);
+
                         if(resumePlayOnly!=0){
                             txData.type=QUEUE_DATA_SD_PLAY;
                             txData.sd_play_message.msgType=SD_PLAY_MSG_TYPE_RESUME;
@@ -747,9 +770,9 @@ int main(int argc, char* argv[])
                                 playOverlayMode=0;
                             }
                             if(playOverlayMode==0){
-                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),0,keyLock);
+                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_scrollyText[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),0,keyLock);
                             }else{
-                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_selectedFolderName[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),(now-lastPlayOverlayChangedTime)/1000,keyLock);
+                                SCREENS_play(selectedFile,UI_MAIN_amountOfFiles,&UI_MAIN_scrollyText[0],currentPlayMinute,currentPlaySecond,percent,currentRepeatMode,allPlayMinute,allPlaySecond,UI_MAIN_timeDiffNowS(sleepTimeOffTime),(now-lastPlayOverlayChangedTime)/1000,keyLock);
                             }
                         }
                     }
@@ -1042,7 +1065,7 @@ int main(int argc, char* argv[])
                     UI_ELEMENTS_setBrightness(0);
                 }
             }else{
-                if((now>UI_MAIN_lastKeyPressedTime)&&(now-UI_MAIN_lastKeyPressedTime)/1000>15000){
+                if((now>UI_MAIN_lastKeyPressedTime)&&(now-UI_MAIN_lastKeyPressedTime)/1000>25000){
                     UI_ELEMENTS_displayOff();
                     UI_ELEMENTS_setBrightness(0);
                 }

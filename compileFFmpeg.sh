@@ -141,7 +141,8 @@ make clean > /dev/null 2>&1
   --disable-securetransport \
   --disable-vapoursynth \
   --disable-xlib \
-  --disable-zlib
+  --disable-zlib \
+  --disable-doc
 ret=$?
 if [ "$ret" != "0" ]; then
     echo "configure did not work"
