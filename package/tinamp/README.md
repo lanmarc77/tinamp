@@ -98,6 +98,7 @@ v00.00.07 (May 2026)
  - increased display off timeout from 15s to 25s to be able to read the now longer audiobook scrolling text
  - updated vlc libraries to version 3.0.23-2
  - updated FFmpeg libraries to version n8.1 (display of runtime length of .amr files is adjusted to avoid bug https://trac.ffmpeg.org/ticket/11576)
+ - fixed a bug that skipped tracks (mostly happening when the screen saver is active)
 
 v00.00.06 (October 2025)  
 
