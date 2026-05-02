@@ -7,7 +7,7 @@ BACK (usually B) pauses or switches from pause to chapter (=file) selection. BAC
   
 When the device is playing an audiobook the volume can be set up using the D-PAD. For as long as this volume overlay screen is shown (usually 5s) pressing the OK button will scroll through different sub menus of the overlay for setting up sleep timer, play speed, equalizer and book repeat mode. The maximum volume depends on what you have set up the device with when starting the application. If the device was only set up e.g. in emulationstation with 50% then the application if set to 100% will only play with 50%. If set to 50% only with 25%. The devices volume buttons can be used to setup the devices volume also while the application is running.  
   
-After 15s of no button input the device will switch off the screen to get as much playtime out of the battery as possible. If no audiobook is playing (incl. the audiobook is paused) the device will shutdown after 300s of no button input. If the screen is off when the device shuts down the screen will stay off. This keeps the device dark e.g. to not wake up again from the light after the sleep timer expired.  
+After 25s of no button input the device will switch off the screen to get as much playtime out of the battery as possible. If no audiobook is playing (incl. the audiobook is paused) the device will shutdown after 300s of no button input. If the screen is off when the device shuts down the screen will stay off. This keeps the device dark e.g. to not wake up again from the light after the sleep timer expired.  
   
 A global settings menu can be reached by navigating to the first audiobook and pressing the D-PAD left. This allows setting up screen rotation, screen brightness, screensaver mode, font type, A-B switch, deleting of bookmarks, reduced mode.  
   
@@ -20,8 +20,14 @@ The application scans orderly in the following positions relative to the ports a
 - ../../ROMS/audiobooks (usually the roms folder of muOS)
 - audiobooks (a folder inside the port/tinamp directory)
   
+### Presorting audiobook folder
+If one has many audiobooks the initial loading and sorting of the library might take very/too long. It is possible to place a `presorted.txt` file into the same directory as the audiobooks. It contains a sorted list of the directory names. If the application finds such a file it will not scan the audiobook folder but instead use the file where each line will contain the directory name of the audiobook. First line will be the first audiobook last line the last.  
+Such a file can be created using the following command line: `find * -type d -print | sort > presorted.txt`  
+This has only been tested with UTF8 able file systems like EXT4. It might also work for FAT32 (which has 437 codepage) but will likely only work for the standard US-ASCII set characters.  
+It is planned as future feature to implement the generation directly on the device.  
+  
 ### Audiobook transfer
-Apart from copying new audiobooks by removing the SD card and using it in another system for the transfer you can also transfer new audiobooks directly via a USB cable if your device supports USB MTP mode. If the player application is running it will detect changes within the audiobook folder (inotify API) and shows a transfer symbol. If you finished the transfer press BACK button. This will rescan all audiobooks.  
+Apart from copying new audiobooks by removing the SD card and using it in another system for the transfer you can also transfer new audiobooks directly via a USB cable if your device supports USB MTP mode. If the player application is running it will detect changes within the audiobook folder (inotify API) and shows a transfer symbol. If you finished the transfer press BACK button. This will rescan all audiobooks/re-read a presorted.txt if it exists.  
   
 ### Bookmarks
 Bookmarks are automatically created. There is one bookmark per book. It is created/updated every 60s during playback and whenever the audiobook is stopped.  
@@ -85,22 +91,31 @@ Everything of the following is build inside ./build directory:
 ```make portmaster``` (to create a distributable portmaster .zip)
 
 ## Version history
-v00.00.06  
+v00.00.07 (May 2026)  
+
+ - large library (presorting) support: support for a presorted.txt file to increase sorted library loading during application start
+ - scrolling text of audiobook name now also contains name of selected title as filename
+ - increased display off timeout from 15s to 25s to be able to read the now longer audiobook scrolling text
+ - updated vlc libraries to version 3.0.23-2
+ - updated FFmpeg libraries to version n8.1 (display of runtime length of .amr files is adjusted to avoid bug https://trac.ffmpeg.org/ticket/11576)
+ - fixed a bug that skipped tracks (mostly happening when the screen saver is active)
+
+v00.00.06 (October 2025)  
 
  - key lock: when the device plays an audio book a key lock can be enabled and disabled by pressing and holding START and then press A
 
-v00.00.05  
+v00.00.05 (June 2025)  
 
  - application detects/handles changes within the audiobook folder (e.g. during MTP file transfers)
 
-v00.00.04  
+v00.00.04 (May 2025)  
 
  - sleep timer set up and chapter select now also respect different D-PAD actions
  - volume fade out starts and ends earlier before auto shutdown to allow cancelling and extending
  - background image support
  - updated FFmpeg libraries to version n4.4.6
 
-v00.00.03  
+v00.00.03 (May 2025)  
 
  - initial release  
 

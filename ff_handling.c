@@ -24,6 +24,7 @@
 #include <dirent.h>
 #include "ff_handling.h"
 #include "format_helper.h"
+#include "utf8.h"
 
 int FF_inotifyFileDescriptor=-1;
 int FF_inotifyWatchDescriptor=-1;
@@ -69,6 +70,81 @@ void FF_closeFolderWatcher(){
 
 /**
   * @brief  gets a sorted list of files or folders inside a given path
+  * 
+  * @param[in] folderPath pointer to full vfs mounted path
+  * @param[in] ID pointer to a value which will hold the sorting postion in the sortedIdArray of the file to be searched via searchString
+  * @param[in] searchString pointer to a string of one specific entrystring (usually a filename) whichs sorting position is to be reported in searchId
+  * @param[in] outQueue pointer to a queue handle where the current status of the finding/sorting can be reported for the UI
+  * @param[out] sortedIdArray pointer to an an array which contains the IDs of the found files sorted ascending
+  * @param[out] amountOfEntries pointer which holds the number of sorted entries
+  * 
+  * @return 0=ok (implies searchString found), 1=no presorted.txt, 2=ID/searchString not found in presorted.txt
+  */
+uint8_t FF_getPresortedEntries(char *folderPath,int32_t* ID,char* searchString,Queue* outQueue,uint16_t* sortedIdArray,uint16_t* amountOfEntries){
+    char fileLine[FF_FILE_PATH_MAX];
+    char preSortedFileName[FF_FILE_PATH_MAX];
+    QueueData outQueueMsg;
+    outQueueMsg.type=QUEUE_DATA_FF;
+    struct stat st;
+    uint16_t sortedPosition=0;
+    uint16_t idCounter=0;
+    //SDL_LogMessage(SDL_LOG_CATEGORY_INPUT,SDL_LOG_PRIORITY_INFO,"FF_getPresortedEntries %s %s %i\n",searchString,folderPath,*ID);
+    strcpy(&preSortedFileName[0],folderPath);strcat(&preSortedFileName[0],"/presorted.txt");
+    FILE* preSortedFile=NULL;
+    preSortedFile=fopen(&preSortedFileName[0],"r");
+    if(preSortedFile!=NULL){
+        stat(&preSortedFileName[0], &st);
+        while(fgets(&fileLine[0],sizeof(fileLine),preSortedFile)!=NULL){
+            uint16_t l=strlen(&fileLine[0]);
+            if((l>0)&&(fileLine[l-1]==0x0A)){fileLine[l-1]=0; l--;}
+            if((l>0)&&(fileLine[l-1]==0x0D)){fileLine[l-1]=0; l--;}
+            if((outQueue==NULL)&&(sortedIdArray==NULL)&&(amountOfEntries==NULL)){//getNameById call
+                if((l>0)&&(fileLine[0]!='#')){
+                    idCounter++;
+                    if(idCounter==*ID){
+                        strcpy(searchString,&fileLine[0]);
+                        fclose(preSortedFile);
+                        return 0;
+                    }
+                }
+            }else{//getFileList call
+                fpos_t currentFilePos;
+                if(fgetpos(preSortedFile,&currentFilePos)==0){
+                    outQueueMsg.ff_message.message=(1000*currentFilePos.__pos)/st.st_size;
+                    queue_push(outQueue,&outQueueMsg);
+                }
+                if((l>0)&&(fileLine[0]!='#')){
+                    sortedPosition++;
+                    sortedIdArray[sortedPosition-1]=sortedPosition;
+                    *amountOfEntries=sortedPosition;
+                    if((searchString!=NULL)&&(searchString[0]!=0)){
+                        if(utf8casecmp(&fileLine[0],&searchString[0])==0){
+                            *ID=sortedPosition-1;
+                        }
+                    }
+                }
+                if(sortedPosition>=FF_MAX_FOLDER_ELEMENTS){//limit to max folder elements
+                    fclose(preSortedFile);
+                    outQueueMsg.ff_message.message=-1;
+                    queue_push(outQueue,&outQueueMsg);
+                    return 0;
+                }
+            }
+        }
+        fclose(preSortedFile);
+        if(outQueue!=NULL){
+            outQueueMsg.ff_message.message=-1;
+            queue_push(outQueue,&outQueueMsg);
+            return 0;
+        }
+        return 2;
+    }else{
+        return 1;
+    }
+}
+
+/**
+  * @brief  gets a sorted list of files or folders inside a given path
   *
   * @param[in] folderPath pointer to full vfs mounted path
   * @param[out] amountOfEntries pointer which holds the number of sorted entries
@@ -90,7 +166,6 @@ uint8_t FF_getList(char* folderPath,uint16_t* amountOfEntries,uint16_t* sortedId
     char minNewCandidateName[FF_FILE_PATH_MAX];
     uint16_t sortedPosition=0;
     uint16_t maxFiles=0;
-    //uint64_t startTime=esp_timer_get_time();
     *amountOfEntries=0;
 
     QueueData outQueueMsg;
@@ -101,43 +176,10 @@ uint8_t FF_getList(char* folderPath,uint16_t* amountOfEntries,uint16_t* sortedId
 
     //checking for presorted folder list
     if(ffType==0){
-/*      char fileLine[FF_FILE_PATH_MAX];
-        strcpy(&minLastName[0],folderPath);strcat(&minLastName[0],"/presorted.txt");
-        FILE* preSortedFile=NULL;
-        preSortedFile=fopen(&minLastName[0],"r");
-        struct stat st;
-        if(preSortedFile!=NULL){
-            stat(&minLastName[0], &st);
-            while(fgets(&fileLine[0],sizeof(fileLine),preSortedFile)!=NULL){
-                uint16_t l=strlen(&fileLine[0]);
-                fpos_t currentFilePos;
-                if(fgetpos(preSortedFile,&currentFilePos)==0){
-                    outQueueMsg.ff_message.message=(1000*currentFilePos.__pos)/st.st_size;
-                    queue_push(outQueue,&outQueueMsg);
-                }
-                if((l>0)&&(fileLine[l-1]==0x0A)){fileLine[l-1]=0; l--;}
-                if((l>0)&&(fileLine[l-1]==0x0D)){fileLine[l-1]=0; l--;}
-                if((l>0)&&(fileLine[0]!='#')){
-                    sortedPosition++;
-                    sortedIdArray[sortedPosition-1]=sortedPosition;
-                    //ESP_LOGI(FF_LOG_TAG,"Storing %s at %d as %d",&fileLine[0],sortedPosition-1,sortedPosition);
-                    *amountOfEntries=sortedPosition;
-                    if((searchString!=NULL)&&(searchString[0]!=0)){
-                        if(strcasecmp(&fileLine[0],&searchString[0])==0){
-                            *searchId=sortedPosition-1;
-                            //ESP_LOGI(FF_LOG_TAG,"Found: %s at %d",&fileLine[0],sortedPosition);
-                        }
-                    }
-                }
-                if(sortedPosition>=FF_MAX_FOLDER_ELEMENTS){
-                    break;
-                }
-            }
-            fclose(preSortedFile);
-            outQueueMsg.ff_message.message=-1;
-            queue_push(outQueue,&outQueueMsg);
+        uint8_t presortedResult=FF_getPresortedEntries(folderPath,searchId,searchString,outQueue,sortedIdArray,amountOfEntries);
+        if(presortedResult==0){
             return 1;
-        }*/
+        }
     }
 
     minNewCandidateName[0]=0;
@@ -250,47 +292,24 @@ int32_t FF_getNameByIdCacheId=-1;
   */
 uint8_t FF_getNameByID(char* folderBasePath,uint16_t ID,char *resultName,uint8_t ffType){
     struct dirent *currentEntry;
-    /*if(folderBasePath[strlen(folderBasePath)-1]!='/'){
-        strcat(folderBasePath,"/");
-    }*/
     DIR *dir = NULL;
     uint16_t idCounter=0;
     
-    //ESP_LOGI(FF_LOG_TAG,"Requested: %d",ID);
     //checking for presorted folder list
     if(ffType==0){
         if((FF_getNameByIdCacheId>=0)&&(FF_getNameByIdCacheId==ID)){
             strcpy(resultName,&FF_getNameByIdCacheFolderName[0]);
             return 0;
         }
-        //UI_MAIN_cpuFull();
-/*      char fileLine[FF_FILE_PATH_MAX];
-        char preSortedFileName[FF_FILE_PATH_MAX];
-        strcpy(&preSortedFileName[0],folderBasePath);strcat(&preSortedFileName[0],"/presorted.txt");
-        FILE* preSortedFile=NULL;
-        preSortedFile=fopen(&preSortedFileName[0],"r");
-        if(preSortedFile!=NULL){
-            while(fgets(&fileLine[0],sizeof(fileLine),preSortedFile)!=NULL){
-                uint16_t l=strlen(&fileLine[0]);
-                if((l>0)&&(fileLine[l-1]==0x0A)){fileLine[l-1]=0; l--;}
-                if((l>0)&&(fileLine[l-1]==0x0D)){fileLine[l-1]=0; l--;}
-                if((l>0)&&(fileLine[0]!='#')){
-                    idCounter++;
-                    if(idCounter==ID){
-                        //ESP_LOGI(FF_LOG_TAG,"Found2: %d %s",ID,&fileLine[0]);
-                        strcpy(resultName,&fileLine[0]);
-                        FF_getNameByIdCacheId=ID;
-                        strcpy(&FF_getNameByIdCacheFolderName[0],&fileLine[0]);
-                        fclose(preSortedFile);
-                        //UI_MAIN_cpuNormal();
-                        return 0;
-                    }
-                }
-            }
-            fclose(preSortedFile);
-            //UI_MAIN_cpuNormal();
+        int32_t searchId=ID;
+        uint8_t presortedResult=FF_getPresortedEntries(folderBasePath,&searchId,resultName,NULL,NULL,NULL);
+        if(presortedResult==0){//found
+            FF_getNameByIdCacheId=ID;
+            strcpy(&FF_getNameByIdCacheFolderName[0],&resultName[0]);
+            return 0;
+        }else if(presortedResult==2){//presorted.txt exists, but entry not found
             return 2;
-        }*/
+        }
     }
 
     dir = opendir(folderBasePath);

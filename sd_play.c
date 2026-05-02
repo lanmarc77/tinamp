@@ -189,6 +189,7 @@ int SD_PLAY_messageLoopThread(void *user_data){
                 data.type=QUEUE_DATA_SD_PLAY;
                 data.sd_play_message.msgType=SD_PLAY_MSG_TYPE_STOPPED_NO_ERROR;
                 queue_push(SD_PLAY_outQueue,&data);
+                libvlc_media_player_stop(SD_PLAY_currentPlayer);//put player in stopped mode to avoid sending multiple ending messages to queue
             }else if (vlc_state==libvlc_Error){
                 data.type=QUEUE_DATA_SD_PLAY;
                 data.sd_play_message.msgType=SD_PLAY_MSG_TYPE_STOPPED_ERROR;
