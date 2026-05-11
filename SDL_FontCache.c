@@ -1253,7 +1253,10 @@ Uint8 FC_LoadFontFromTTF(FC_Font* font, SDL_Renderer* renderer, TTF_Font* ttf, S
                 }
 
                 // Upload the current surface to the glyph cache now so we can keep the cache level packing cursor up to date as we go.
-                FC_UploadGlyphCache(font, i, surfaces[i]);
+                if(FC_UploadGlyphCache(font, i, surfaces[i])==0){
+                    SDL_FreeSurface(surfaces[i]);
+                    return 0;
+                }
                 SDL_FreeSurface(surfaces[i]);
                 #ifndef FC_USE_SDL_GPU
                 SDL_SetTextureBlendMode(font->glyph_cache[i], SDL_BLENDMODE_BLEND);
@@ -1280,7 +1283,10 @@ Uint8 FC_LoadFontFromTTF(FC_Font* font, SDL_Renderer* renderer, TTF_Font* ttf, S
 
         {
             int i = num_surfaces-1;
-            FC_UploadGlyphCache(font, i, surfaces[i]);
+            if(FC_UploadGlyphCache(font, i, surfaces[i])==0){
+                SDL_FreeSurface(surfaces[i]);
+                return 0;
+            }
             SDL_FreeSurface(surfaces[i]);
             #ifndef FC_USE_SDL_GPU
             SDL_SetTextureBlendMode(font->glyph_cache[i], SDL_BLENDMODE_BLEND);

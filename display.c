@@ -45,6 +45,7 @@ uint8_t DISPLAY_rotateActive=0;
 uint8_t noUseSDL=1;
 uint8_t DISPLAY_invalidateCache=0;
 uint8_t DISPLAY_disableBackgroundImage=0;
+uint8_t DISPLAY_useFC=1;
 
 uint32_t DISPLAY_grid[4][16]={0};
 uint32_t DISPLAY_gridLast[4][16]={0};
@@ -116,6 +117,7 @@ void DISPLAY_init(char *fontPath,uint8_t runsOnDesktop){
         }
         SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Window created.\n");
         SDL_SetWindowFullscreen(DISPLAY_window, SDL_WINDOW_FULLSCREEN);
+        SDL_ShowCursor(SDL_DISABLE);
     }
     SDL_GetWindowSize(DISPLAY_window, &DISPLAY_maxW, &DISPLAY_maxH);
     SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Fullscreen enabled to %ix%i.\n",DISPLAY_maxW,DISPLAY_maxH);
@@ -190,6 +192,29 @@ uint8_t DISPLAY_checkUpdateNeeded(){
     return 0;
 }
 
+void DISPLAY_DrawText(TTF_Font* font,SDL_Renderer* renderer,int x,int y,const char* text)
+{
+    SDL_Color color = {44,255,5,255};
+
+    SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text, color);
+    if (!surface)
+        return;
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+
+    if (!texture)
+        return;
+
+    int w, h;
+    SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+
+    SDL_Rect dst = { x, y, w, h };
+    SDL_RenderCopy(renderer, texture, NULL, &dst);
+
+    SDL_DestroyTexture(texture);
+}
+
 void DISPLAY_update(){
     if(DISPLAY_checkUpdateNeeded()==0){
 	    return;
@@ -243,7 +268,11 @@ void DISPLAY_update(){
                 uint32_t t[2]={0};
                 t[0]=DISPLAY_grid[y][x];
                 if((t[0]!=0)&&(t[0]!=' ')){
-                    FC_Draw(DISPLAY_fc_font, DISPLAY_renderer, x*maxCharSizeWidth+DISPLAY_oX, y*maxCharSizeHeigth+DISPLAY_oY+(maxCharSizeHeigth-DISPLAY_cH)/2, (char*)&t[0]);
+                    if(DISPLAY_useFC){
+                        FC_Draw(DISPLAY_fc_font, DISPLAY_renderer, x*maxCharSizeWidth+DISPLAY_oX, y*maxCharSizeHeigth+DISPLAY_oY+(maxCharSizeHeigth-DISPLAY_cH)/2, (char*)&t[0]);
+                    }else{
+                        DISPLAY_DrawText(DISPLAY_font, DISPLAY_renderer, x*maxCharSizeWidth+DISPLAY_oX, y*maxCharSizeHeigth+DISPLAY_oY+(maxCharSizeHeigth-DISPLAY_cH)/2, (char*)&t[0]);
+                    }
                 }
             }
         }
@@ -436,10 +465,18 @@ uint8_t DISPLAY_setFont(uint16_t fontNumber){
     TTF_CloseFont(DISPLAY_font);
     DISPLAY_font = TTF_OpenFont(fontFile, (adjustedPointSize*100)/h100);
 #endif
-    //FontCache stuff
-    DISPLAY_fc_font = FC_CreateFont();
-    FC_LoadFont(DISPLAY_fc_font, DISPLAY_renderer, fontFile, (adjustedPointSize*100)/h100, FC_MakeColor(44,255,5,255), TTF_STYLE_NORMAL);
-
+    if(DISPLAY_useFC){
+        //FontCache stuff
+        DISPLAY_fc_font = FC_CreateFont();
+        if(FC_LoadFont(DISPLAY_fc_font, DISPLAY_renderer, fontFile, (adjustedPointSize*100)/h100, FC_MakeColor(44,255,5,255), TTF_STYLE_NORMAL)==0){
+            SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"FontCache failed: %s. Using slower simpler font rendering.\n",SDL_GetError());
+            FC_FreeFont(DISPLAY_fc_font);
+            DISPLAY_fc_font=NULL;
+            DISPLAY_useFC=0;
+        }else{
+            SDL_LogMessage(SDL_LOG_CATEGORY_VIDEO,SDL_LOG_PRIORITY_INFO,"Using FontCache.\n");
+        }
+    }
     TTF_SizeUTF8(DISPLAY_font, "M", &w100, &h100);
     DISPLAY_cW=w100;
     DISPLAY_cH=h100;
