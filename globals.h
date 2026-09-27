@@ -3,8 +3,8 @@
 
 #define FW_MAJOR 0x00
 #define FW_MINOR 0x00
-#define FW_PATCH 0x09
+#define FW_PATCH 0x0A
 
-#define FFMPEG_AMR_PATCH 
+#define FFMPEG_AMR_PATCH
 
 #endif
