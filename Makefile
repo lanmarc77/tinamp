@@ -28,12 +28,12 @@ portmaster:
 
 libvlc_aarch64_compile:
 	cd $(BUILD_DIR) && tar -xzf ../vlc.tar.gz && mv vlc-* vlc
-	cd $(BUILD_DIR)/vlc/src && echo "79128878ddb2c280bbb6c89c76a46b31a80ade1c" > revision.txt
+	cd $(BUILD_DIR)/vlc/src && echo "6de05adcbaf2e8b85fe86aad4169393098628119" > revision.txt
 	./compileLibvlc.sh
 
 libvlc_armhf_compile:
 	cd $(BUILD_DIR) && tar -xzf ../vlc.tar.gz && mv vlc-* vlc
-	cd $(BUILD_DIR)/vlc/src && echo "79128878ddb2c280bbb6c89c76a46b31a80ade1c" > revision.txt
+	cd $(BUILD_DIR)/vlc/src && echo "6de05adcbaf2e8b85fe86aad4169393098628119" > revision.txt
 	./compileLibvlc.sh
 
 libffmpeg_aarch64_compile:

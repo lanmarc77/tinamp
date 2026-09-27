@@ -25,8 +25,6 @@ make clean > /dev/null 2>&1
   --disable-mmal \
   --disable-nvdec \
   --disable-nvenc \
-  --disable-omx \
-  --disable-omx-rpi \
   --disable-rkmpp \
   --disable-v4l2-m2m \
   --disable-vaapi \
@@ -53,7 +51,6 @@ make clean > /dev/null 2>&1
   --disable-libbluray \
   --disable-libbs2b \
   --disable-libcaca \
-  --disable-libcelt \
   --disable-libcdio \
   --disable-libcodec2 \
   --disable-libdav1d \
@@ -64,7 +61,6 @@ make clean > /dev/null 2>&1
   --disable-libfontconfig \
   --disable-libfreetype \
   --disable-libfribidi \
-  --disable-libglslang \
   --disable-libgme \
   --disable-libgsm \
   --disable-libiec61883 \
